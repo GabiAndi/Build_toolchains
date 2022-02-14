@@ -323,7 +323,7 @@ Nos aseguramos de tener bien actualizado nuestro sistema, luego, deberemos insta
 ~~~TEXT
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential python3 python3-dev python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev llvm-11 clang-11 libclang-11-dev
+sudo apt install build-essential python3 python3-dev python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev llvm-11 clang-11 libclang-11-dev ninja-build
 ~~~
 
 ### Creamos mas variables bash ***(Host)***

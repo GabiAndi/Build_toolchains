@@ -23,6 +23,7 @@ Hasta el día de hoy se encuentran disponibles los siguientes artículos:
 ### Compilación nativa
 
 * [Compilación nativa (Linux x86_64).](docs/x86_64-linux.md)
+* [Compilación nativa con Qt (Linux x86_64).](docs/x86_64-linux-qt.md)
 
 ### Compilación cruzada
 
