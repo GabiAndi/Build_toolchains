@@ -16,19 +16,35 @@ Es por eso que realizo esta serie de instructivos. Un poco para acordarme lo que
 
 Aclaro que no soy ningún experto en el tema, y que seguramente, todo lo que hice se pueda mejorar. Todas las guías están orientadas a un entorno GNU/Linux, no hay nada de Windows por aquí. Tomé esta decición debido a la complejidad excesiva y a la falta de documentación para generar cadenas de herramientas GNU en Windows. Probe hacer esto con MinGW, MSYS2, Cygwin, etc, pero nada me funciono. Tal vez en un futuro lo intente nuevamente, pero por ahora, no esta en mis planes, yo con mi *Linux Mint* estoy mas que contento.
 
-## Tutoriales
-
-Hasta el día de hoy se encuentran disponibles los siguientes artículos:
+## GCC
 
 ### Compilación nativa
 
-* [Compilación nativa (Linux x86_64).](docs/native/gcc/x86_64-linux.md)
-* [Compilación nativa con Qt (Linux x86_64).](docs/native/qt/x86_64-linux.md)
+* [Compilación nativa (Linux x86_64).](docs/native/gcc/x86_64-linux.md) (**Funcionando**)
 
 ### Compilación cruzada
 
-* [Compilación cruzada (Linux ARM).](docs/cross/gcc/arm-linux.md)
-* [Compilación cruzada con Qt (Linux ARM).](docs/cross/qt/arm-linux.md)
+* [Compilación cruzada (Linux ARM).](docs/cross/gcc/arm-linux.md) (**Funcionando**)
+
+## Clang/LLVM
+
+### Compilación nativa
+
+* [Compilación nativa (Linux x86_64).](docs/in-process.md) (**En proceso**)
+
+### Compilación cruzada
+
+* [Compilación cruzada (Linux ARM).](docs/coming-soon.md) (**Proximamente**)
+
+## Qt
+
+### Compilación nativa
+
+* [Compilación nativa (Linux x86_64).](docs/native/qt/x86_64-linux.md) (**Funcionando**)
+
+### Compilación cruzada
+
+* [Compilación cruzada (Linux ARM).](docs/cross/qt/arm-linux.md) (**Funcionando**)
 
 ## ACS (Autoconfiguration and Compilation Scripts)
 
