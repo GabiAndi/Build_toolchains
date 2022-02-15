@@ -1,1 +1,9 @@
-bin
+# Tutoriales no terminados
+# Compilación nativa
+docs/native/clang
+
+# Compilación cruzada
+docs/cross/clang
+
+docs/cross/gcc/arm-none.md
+docs/cross/qt/arm-android.md
