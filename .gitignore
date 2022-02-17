@@ -1,7 +1,4 @@
 # Tutoriales no terminados
-# Compilación nativa
-docs/native/clang
-
 # Compilación cruzada
 docs/cross/clang
 

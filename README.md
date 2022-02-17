@@ -30,11 +30,11 @@ Aclaro que no soy ningún experto en el tema, y que seguramente, todo lo que hic
 
 ### Compilación nativa
 
-* [Compilación nativa (Linux x86_64).](docs/in-process.md) (**En proceso**)
+* [Compilación nativa (Linux x86_64).](docs/native/clang/x86_64-linux.md) (**Funcionando**)
 
 ### Compilación cruzada
 
-* [Compilación cruzada (Linux ARM).](docs/coming-soon.md) (**Proximamente**)
+* [Compilación cruzada (Linux ARM).](docs/in-process.md) (**En proceso**)
 
 ## Qt
 
