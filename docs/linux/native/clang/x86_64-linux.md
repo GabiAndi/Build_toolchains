@@ -1,6 +1,6 @@
 # Construir toolchain nativo
 
-**Aclaración:** ***este documento se revisó por última vez el 15 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por última vez el 20 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Construir toolchain nativo](#construir-toolchain-nativo)
@@ -19,13 +19,13 @@ Este tutorial detalla el proceso que seguí para poder construir un toolchain Cl
 
 Debe tener en cuenta la versión de Clang que ejecuta su host. Esto es necesario para la comprobación y reducción de errores del compilador nuevo que se construirá. Si desea conocer mas sobre el proceso de compilación de versiones nuevas de Clang a partir de versiones mas antiguas, es posible deba leer [sobre el bootstrapping.](https://en.wikipedia.org/wiki/Bootstrapping_(compilers))
 
-Le recomiendo que **lea a conciencia**. El copiar y pegar comandos como un loco lo llevará a que nada le funcione y se termine por frustrar. Así que tomece el tiempo y la calma necesaria para leer este post, le aseguro que aprendera bastante.
-
 ## Referencias
 
 La documentación oficial de LLVM esta bastante bien detallada, lo que me facilitó enormemente el proceso de configuración de las fuentes. Lo links que aportan buena información son:
 
 * [Building LLVM with CMake.](https://llvm.org/docs/CMake.html)
+
+Le recomiendo que **lea a conciencia**. El copiar y pegar comandos como un loco lo llevará a que nada le funcione y se termine por frustrar. Así que tomece el tiempo y la calma necesaria para leer este post, le aseguro que aprendera bastante.
 
 ## Construcción del toolchain
 
@@ -36,7 +36,7 @@ Primero, asegúrese de que su sistema esté actualizado e instale las dependenci
 ~~~TEXT
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential python3 python3-dev python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive clang clang-tools llvm llvm-dev libclang-dev lldb lld libcxx gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev libmpfr-dev
+sudo apt install -y build-essential python3 python3-dev python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive clang clang-tools llvm llvm-dev libclang-dev lldb lld gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev libmpfr-dev cmake ninja-build gcc-multilib
 ~~~
 
 La mayoría de las dependencias ya vienen instaladas en un sistema Linux, sin embargo, puede que mas adelante en la construcción aparezcan errores debido a paquetes que no se encuentren, usted debe corregir esto para poder realizar la compilación con éxito.
@@ -88,8 +88,10 @@ Ahora que tenemos todas las fuentes nos vamos a la carpeta de construcción y co
 cd $BUILD_DIR
 
 cmake \
--DLLVM_ENABLE_PROJECTS="clang;lld;lldb;clang-tools-extra;pstl" \
--DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind;compiler-rt" \
+-DCMAKE_C_COMPILER=clang \
+-DCMAKE_CXX_COMPILER=clang++ \
+-DLLVM_ENABLE_PROJECTS="clang;lld;lldb;clang-tools-extra;pstl;openmp;polly;mlir" \
+-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libc;libclc;libunwind;compiler-rt" \
 -DLLVM_PARALLEL_LINK_JOBS=1 \
 -DLLVM_DEFAULT_TARGET_TRIPLE="x86_64-pc-linux-gnu" \
 -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
@@ -99,10 +101,10 @@ cmake \
 -G "Ninja"
 ~~~
 
-Si todo se construyo de manera correct ahora puede compilar e instalar:
+Si todo se construyo de manera correcta ahora puede compilar e instalar:
 
 ~~~TEXT
-cmake --build .
+cmake --build . --parallel 2
 cmake --install .
 ~~~
 

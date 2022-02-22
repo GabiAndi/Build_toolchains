@@ -251,7 +251,7 @@ contrib/download_prerequisites
 
 ### Variables *PATH*
 
-Durante todo el proceso de compilación, asegúrese de que el subdirectorio */bin* de la instalación esté en su *PATH*. Puede eliminar este directorio del *PATH* luego de la instalación, pero la mayoría de los pasos de compilación esperan encontrar arm-linux-gnueabihf-gcc y otras herramientas de host a través del *PATH*.
+Durante todo el proceso de compilación, asegúrese de que el subdirectorio */bin* de la instalación esté en su *PATH*. Puede eliminar este directorio del *PATH* luego de la instalación, pero la mayoría de los pasos de compilación esperan encontrar arm-linux-gnueabihf-gcc y otras herramientas de host a través del *PATH*:
 
 ~~~TEXT
 export PATH=$INSTALL_DIR/bin:$PATH
