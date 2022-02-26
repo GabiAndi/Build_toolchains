@@ -1,6 +1,6 @@
 # Construir toolchain cruzado para ARM con sistema Linux
 
-**Aclaración:** ***este documento se revisó por ultima vez el 9 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 26 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Construir toolchain cruzado para ARM con sistema Linux](#construir-toolchain-cruzado-para-arm-con-sistema-linux)
@@ -46,9 +46,9 @@ Este tutorial detalla el proceso que seguí para poder construir GCC para compil
 
 **¿Qué es un compilador cruzado? ¿Para qué necesito crear el mio?**
 
-Un compilador cruzado es un compilador que genera binarios para sistemas distintos del cual se esta ejecutando. En este caso desde ***x86_64 Linux*** generamos archivos ejecutables para ***armv7 Linux***. Esto permite entre otras cosas, no limitarse a la potencia de computo de la Raspberry Pi, y poder generar los ejecutables directamente en nuestra PC de escritorio.
+Un compilador cruzado es un compilador que genera binarios para sistemas distintos del cual se esta ejecutando. En este caso desde ***x86_64 Linux*** generamos archivos ejecutables para ***armv6 Linux***. Esto permite entre otras cosas, no limitarse a la potencia de computo de la Raspberry Pi, y poder generar los ejecutables directamente en nuestra PC de escritorio.
 
-Toda la guía tiene como objetivo Raspberry Pi 2 en adelante, pero se sigue el mismo proceso para una arquitectura diferente, solo se cambian los parámetros de configuración correspondientes.
+Toda la guía tiene como objetivo Raspberry Pi 1 en adelante, pero se sigue el mismo proceso para una arquitectura diferente, solo se cambian los parámetros de configuración correspondientes.
 
 Debe tener en cuenta la versión de GCC que ejecuta su máquina. La misma debe ser la mas parecida (o en su defecto mas reciente) a la versión de GCC que se busca compilar. Esto es necesario para la comprobación y reducción de errores del compilador nuevo.
 
@@ -66,15 +66,10 @@ Si desea conocer mas sobre el proceso de compilación de versiones nuevas de GCC
 
 La documentación oficial no me fue suficiente para poder realizar el proceso de construcción de manera exitosa. Por suerte hay personas que lograron hacerlo y comparten sus experiencias con nosotros (como yo ahora estoy haciendo con ustedes). A continuación pongo a disposición todas las páginas que leí y me ayudaron:
 
-**Documentación oficial:**
-
 * [Sobre el kernel de la Raspberry Pi (variación de Linux).](https://www.raspberrypi.org/documentation/linux/kernel/building.md)
 * [Artículo de compilación de GCC osdev.org.](https://wiki.osdev.org/Building_GCC)
 * [Artículo de compilación cruzada de GCC osdev.org.](https://wiki.osdev.org/GCC_Cross-Compiler)
 * [Documentación oficial de GCC.](https://gcc.gnu.org/install/configure.html)
-
-**Artículos de terceros:**
-
 * [Building GCC as a cross compiler for Raspberry Pi.](https://solarianprogrammer.com/2018/05/06/building-gcc-cross-compiler-raspberry-pi/)
 * [How to Build a GCC Cross-Compiler.](https://preshing.com/20141119/how-to-build-a-gcc-cross-compiler/)
 * [Very Simple Guide for Building Cross Compilers Tips.](http://www.ifp.illinois.edu/~nakazato/tips/xgcc.html)
@@ -163,12 +158,12 @@ Si la versión de GCC, Binutils y Glibc son compatibles y se puede crear la cade
 
 ### Preparamos el Host
 
-Yo utilizo **Linux Mint** que es un sistema operativo basado en debian, por lo que todo lo haré con el gestor de paquetes apt:
+Yo utilizo **Linux Mint** que es un sistema operativo basado en **Debian**, por lo que todo lo haré con el gestor de paquetes apt:
 
 ~~~TEXT
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential python3 python3-dev python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev
+sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
 ~~~
 
 ### Preparando la estructura de carpetas
@@ -191,11 +186,11 @@ export GLIBC_VERSION="2.31"
 export GDB_VERSION="10.1"
 
 export TARGET="arm-linux-gnueabihf"
-export TARGET_OPTIONS="--with-arch=armv7-a --with-fpu=neon-vfpv4 --with-float=hard"
+export TARGET_OPTIONS="--with-arch=armv6zk --with-fpu=vfp --with-float=hard"
 export EXTRA_OPTIONS="--disable-multilib --enable-multiarch --enable-lto --disable-nls --with-gnu-as --with-gnu-ld"
 export GCC_LANGUAGES="c,c++"
 
-export INSTALL_DIR_PREFIX="cross-pi-2"
+export INSTALL_DIR_PREFIX="cross-pi-1"
 
 export WORK_DIR="$HOME/build-toolchain"
 export SRC_DIR="$WORK_DIR/src"
@@ -268,7 +263,7 @@ Copie los encabezados del kernel en las carpetas anteriores, consulte la [docume
 ~~~TEXT
 cd $SRC_DIR/linux
 
-KERNEL=kernel7
+KERNEL=kernel
 
 make \
 ARCH=arm \
@@ -572,7 +567,7 @@ Copie los encabezados del kernel en las carpetas anteriores, consulte la [docume
 ~~~TEXT
 cd $SRC_DIR/linux
 
-KERNEL=kernel7
+KERNEL=kernel
 
 make \
 ARCH=arm \
@@ -725,7 +720,7 @@ mv $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION.tar.xz $SAVE_TOOLCHAIN_DIR
 
 Ahora guarde los comprimidos en una carpeta separada. Luego ya puede eliminar todo el contenido de la ruta de compilación temporal.
 
-**Nota:** se mostro el proceso para generar un compilador nuevo a partir de las Glibc anteriores, pero en realidad es conveniente utilizar la misma versión de GCC que la que incorpora la Raspberry.
+**Nota:** se mostro el proceso para generar un compilador nuevo a partir de las Glibc anteriores, pero en realidad es conveniente utilizar la misma versión de GCC que la que incorpora la Raspberry. Esto se debe a que algunos programas utilizan las librerias del compilador.
 
 ## Conclusiones
 

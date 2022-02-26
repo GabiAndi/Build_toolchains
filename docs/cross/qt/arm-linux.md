@@ -1,6 +1,6 @@
 # Constuir toolchain cruzado para ARM Qt con sistema Linux
 
-**Aclaración:** ***este documento se revisó por ultima vez el 10 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 26 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Constuir toolchain cruzado para ARM Qt con sistema Linux](#constuir-toolchain-cruzado-para-arm-qt-con-sistema-linux)
@@ -82,9 +82,8 @@ Para luego tener todo referenciado, creamos un par de variables de bash:
 ~~~TEXT
 export TODAY=$(date +'%Y-%m-%d')
 
-export RPI_VERSION="2"
-export RPI_MODEL="b"
-export RPI_NAME="rpi$RPI_VERSION$RPI_MODEL"
+export RPI_VERSION="1"
+export RPI_NAME="rpi$RPI_VERSION"
 
 export RPI_USER="pi"
 
@@ -165,8 +164,7 @@ Realizamos la configuración de periféricos, wifi y demás. Cuando terminemos r
 Como paso siguiente actualizamos todo:
 
 ~~~TEXT
-sudo apt update
-sudo apt upgrade -y
+sudo apt update && sudo apt upgrade -y && sudo rpi-update
 ~~~
 
 Luego de esto debe reiniciar la Raspberry Pi y ya la tendremos lista para comenzar a configurarla para nuestro setup.
@@ -323,7 +321,7 @@ Nos aseguramos de tener bien actualizado nuestro sistema, luego, deberemos insta
 ~~~TEXT
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install build-essential python3 python3-dev python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev llvm-11 clang-11 libclang-11-dev ninja-build
+sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
 ~~~
 
 ### Creamos mas variables bash ***(Host)***
@@ -343,7 +341,7 @@ export WORK_DIR="$HOME/build-toolchain"
 export SRC_DIR="$WORK_DIR/src"
 export BUILD_DIR="$WORK_DIR/build"
 
-export INSTALL_DIR="/opt/qtrpi2"
+export INSTALL_DIR="/opt/qt$RPI_NAME"
 export SYSROOT="$INSTALL_DIR/sysroot"
 
 export QT_INSTALL_DIR="$INSTALL_DIR/qt$QT_VERSION"
@@ -355,7 +353,7 @@ Puede utilizar los siguientes comandos para crear una carpeta y utilizarla como 
 
 ~~~TEXT
 mkdir -p $WORK_DIR $SRC_DIR $BUILD_DIR
-sudo mkdir -p $INSTALL_DIR $SYSROOT $SYSROOT/usr $QT_INSTALL_DIR
+sudo mkdir -p $INSTALL_DIR $SYSROOT $SYSROOT/usr $SYSROOT/opt $QT_INSTALL_DIR
 sudo chown $USER:$USER -R $INSTALL_DIR
 ~~~
 
@@ -380,7 +378,7 @@ tar -xf qt-everywhere-src-$QT_VERSION.tar.xz
 Para compilar binarios de una arquitectura a otra necesitamos un compilador cruzado. Podemos descargarlo [o crear uno propio.](arm-linux.md) Luego procedemos a copiarlo en la carpeta de instalación:
 
 ~~~TEXT
-export CROSS_COMPILER_NAME="cross-pi-2-gcc-10.2.0"
+export CROSS_COMPILER_NAME="cross-pi-1-gcc-10.2.0"
 
 tar -xf $CROSS_COMPILER_NAME.tar.xz -C $INSTALL_DIR
 
@@ -404,6 +402,7 @@ sudo cp -r /media/$USER/raspi-root/usr/include $SYSROOT/usr
 sudo cp -r /media/$USER/raspi-root/usr/lib $SYSROOT/usr
 sudo cp -r /media/$USER/raspi-root/usr/local $SYSROOT/usr
 sudo cp -r /media/$USER/raspi-root/usr/share $SYSROOT/usr
+sudo cp -r /media/$USER/raspi-root/opt/vc $SYSROOT/opt
 
 sudo chown $USER:$USER -R $SYSROOT
 
@@ -421,6 +420,7 @@ rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/usr/include $SYSROOT/usr
 rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/usr/lib $SYSROOT/usr
 rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/usr/local $SYSROOT/usr
 rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/usr/share $SYSROOT/usr
+rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/opt/vc $SYSROOT/opt
 ~~~
 
 ### Arreglar los enlaces simbólicos ***(Host)***
@@ -455,11 +455,11 @@ nano $SYSROOT/etc/ld.so.conf
 Y añadimos las rutas en donde tenemos las bibliotecas:
 
 ~~~TEXT
-/usr/local/lib/arm-linux-gnueabihf
 /lib/arm-linux-gnueabihf
 /usr/lib/arm-linux-gnueabihf
 /usr/lib/arm-linux-gnueabihf/libfakeroot
 /usr/local/lib
+/usr/local/lib/arm-linux-gnueabihf
 ~~~
 
 ### Compilar Qt ***(Host)***
@@ -482,15 +482,15 @@ include_guard(GLOBAL)
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
-set(CMAKE_SYSROOT $SYSROOT)
-set(CROSS_COMPILER $CROSS_COMPILER_DIR/bin)
+set(CMAKE_SYSROOT "$SYSROOT")
+set(CROSS_COMPILER "$CROSS_COMPILER_DIR/bin")
 
 set(ENV{PKG_CONFIG_PATH} "")
-set(ENV{PKG_CONFIG_LIBDIR} ${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig)
-set(ENV{PKG_CONFIG_SYSROOT_DIR} ${CMAKE_SYSROOT})
+set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
 
-set(CMAKE_C_COMPILER ${CROSS_COMPILER}/$TARGET-gcc)
-set(CMAKE_CXX_COMPILER ${CROSS_COMPILER}/$TARGET-g++)
+set(CMAKE_C_COMPILER "${CROSS_COMPILER}/$TARGET-gcc")
+set(CMAKE_CXX_COMPILER "${CROSS_COMPILER}/$TARGET-g++")
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -505,7 +505,7 @@ cd $BUILD_DIR
 
 cmake \
 -DQT_HOST_PATH=$QT_HOST_PATH \
--DCMAKE_TOOLCHAIN_FILE=$INSTALL_DIR/toolchain.cmake \
+-DCMAKE_TOOLCHAIN_FILE="$INSTALL_DIR/toolchain.cmake" \
 -DCMAKE_BUILD_TYPE=Release \
 -DBUILD_SHARED_LIBS=ON \
 -DCMAKE_INSTALL_PREFIX=$QT_INSTALL_DIR \
@@ -515,7 +515,7 @@ cmake \
 -DINPUT_opengl=es2 \
 -DQT_QPA_DEFAULT_PLATFORM=EGLFS \
 -DQT_QMAKE_DEVICE_OPTIONS=CROSS_COMPILE=$CROSS_COMPILER_DIR/bin/$TARGET- \
--DQT_QMAKE_TARGET_MKSPEC=devices/linux-rasp-pi2-g++ \
+-DQT_QMAKE_TARGET_MKSPEC=devices/linux-rasp-pi-g++ \
 -DBUILD_qtwebengine=OFF \
 -DBUILD_qtwayland=OFF \
 -DQT_BUILD_TESTS=FALSE \
@@ -548,6 +548,8 @@ Ahora que tenemos compilados los binarios de Qt, tenemos que pasarlos a la Raspb
 
 ~~~TEXT
 rsync -az --rsync-path="sudo rsync" $QT_INSTALL_DIR $RPI_USER@$RPI_IP:/usr/local
+
+cp -r $QT_INSTALL_DIR $SYSROOT/usr/local
 ~~~
 
 ### Actualizar vinculador en Raspberry Pi ***(RPi)***
@@ -592,7 +594,7 @@ Por último lo que debemos hacer en la pestaña de kits es irnos a editar las ba
 
 ~~~TEXT
 QT_HOST_PATH:PATH=%{Qt:QT_HOST_PREFIX}
-CMAKE_SYSROOT:PATH=/opt/qtrpi2/sysroot
+CMAKE_SYSROOT:PATH=/opt/qt$RPI_NAME/sysroot
 ~~~
 
 Y listo tenemos nuestra Raspberry Pi y su conjunto de herramientas ya instalado y listo para compilar codigo cruzado.

@@ -1,10 +1,7 @@
 # Tutoriales no terminados
 
-# Windows
 # Compilación cruzada
-docs/windows/cross/qt/arm-linux.md
+docs/cross/gcc/arm-none.md
 
-# Linux
-# Compilación cruzada
-docs/linux/cross/gcc/arm-none.md
-docs/linux/cross/qt/arm-android.md
+# En espera
+standby

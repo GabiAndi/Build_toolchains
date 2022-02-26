@@ -44,7 +44,7 @@ Primero, asegúrese de que su sistema esté actualizado e instale las dependenci
 ~~~TEXT
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential python3 python3-dev python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev
+sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
 ~~~
 
 La mayoría de las dependencias ya vienen instaladas en un sistema Linux, sin embargo, puede que mas adelante en la construcción aparezcan errores debido a paquetes que no se encuentren, usted debe corregir esto para poder realizar la compilación con éxito.
