@@ -186,7 +186,7 @@ export GLIBC_VERSION="2.31"
 export GDB_VERSION="10.1"
 
 export TARGET="arm-linux-gnueabihf"
-export TARGET_OPTIONS="--with-arch=armv6zk --with-fpu=vfp --with-float=hard"
+export TARGET_OPTIONS="--with-arch=armv6zk --with-fpu=vfp --with-float=hard --with-mode=arm"
 export EXTRA_OPTIONS="--disable-multilib --enable-multiarch --enable-lto --disable-nls --with-gnu-as --with-gnu-ld"
 export GCC_LANGUAGES="c,c++"
 

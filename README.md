@@ -27,6 +27,7 @@ Aclaro que no soy ningún experto en el tema, y que seguramente, todo lo que hic
 ### Compilación cruzada
 
 * [Compilación cruzada (Linux ARM).](docs/cross/gcc/arm-linux.md) (**Funcionando**)
+* [Compilación cruzada (Bare metal ARM).](docs/cross/gcc/arm-none.md) (**Funcionando**)
 
 ## Clang/LLVM
 
