@@ -1,6 +1,6 @@
 # Construir toolchain cruzado para ARM con sistema Linux
 
-**Aclaración:** ***este documento se revisó por ultima vez el 26 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Construir toolchain cruzado para ARM con sistema Linux](#construir-toolchain-cruzado-para-arm-con-sistema-linux)
@@ -129,7 +129,7 @@ Al día de hoy, Raspberry Pi OS viene con GCC 10.2.1, GDB 10.1, Binutils 2.35.2 
 	
 Si en un futuro las versiones incorporadas cambian, puede verificarlas con estos comandos (ejecutados desde la Raspberry Pi obviamente):
 
-~~~TEXT
+~~~bash
 gcc --version
 
 gdb --version
@@ -158,12 +158,12 @@ Si la versión de GCC, Binutils y Glibc son compatibles y se puede crear la cade
 
 ### Preparamos el Host
 
-Yo utilizo **Linux Mint** que es un sistema operativo basado en **Debian**, por lo que todo lo haré con el gestor de paquetes apt:
+Yo utilizo **Arch Linux** que es un sistema operativo roling release, por lo que todo lo haré con el gestor de paquetes pacman:
 
-~~~TEXT
-sudo apt update && sudo apt upgrade -y
+~~~bash
+sudo pacman -Syu
 
-sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
+sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
 ~~~
 
 ### Preparando la estructura de carpetas
@@ -177,13 +177,13 @@ Ruta de compilación se refiere a donde se guardaran los binarios compilados del
 
 Antes de eso, para poder hacer mas sencilla la escritura de comandos, y así evitar errores de tipeo, voy a exportar las rutas y configuraciones como variables de bash:
 
-~~~TEXT
+~~~bash
 export N_CPUS="$(nproc)"
 
-export BINUTILS_VERSION="2.35.2"
+export BINUTILS_VERSION="2.38"
 export GCC_VERSION="8.5.0"
 export GLIBC_VERSION="2.31"
-export GDB_VERSION="10.1"
+export GDB_VERSION="11.2"
 
 export TARGET="arm-linux-gnueabihf"
 export TARGET_OPTIONS="--with-arch=armv6zk --with-fpu=vfp --with-float=hard --with-mode=arm"
@@ -204,7 +204,7 @@ export SAVE_TOOLCHAIN_DIR="$HOME"
 
 Creamos las carpetas base en donde construiremos todo:
 
-~~~TEXT
+~~~bash
 mkdir -p $SRC_DIR $BUILD_DIR $INSTALL_DIR
 ~~~
 
@@ -214,7 +214,7 @@ Descarguemos lo necesario para construir el compilador cruzado. Binutils, Glibc,
 
 Para la biblioteca estándar, también puede escoger *Newlib* en lugar de *Glibc*. En mi caso utilizare Glibc ya que la Raspberry corre un sistema GNU/Linux. Newlib se adapta mejor a sistemas embebidos o bare metal:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR
 
 wget https://ftpmirror.gnu.org/binutils/binutils-$BINUTILS_VERSION.tar.xz
@@ -222,6 +222,8 @@ wget https://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz
 wget https://ftpmirror.gnu.org/gnu/glibc/glibc-$GLIBC_VERSION.tar.xz
 wget https://ftpmirror.gnu.org/gnu/gdb/gdb-$GDB_VERSION.tar.xz
 git clone --depth=1 https://github.com/raspberrypi/linux
+
+rm -rf linux/.git*
 
 tar -czf linux.tar.xz linux
 
@@ -239,7 +241,7 @@ Tanto GCC como Binutils, son las utilidades para construcción de binarios. Eso 
 
 GCC necesita algunos paquetes extras que debemos descargar dentro de la carpeta de origen:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR/gcc-$GCC_VERSION
 contrib/download_prerequisites
 ~~~
@@ -248,7 +250,7 @@ contrib/download_prerequisites
 
 Durante todo el proceso de compilación, asegúrese de que el subdirectorio */bin* de la instalación esté en su *PATH*. Puede eliminar este directorio del *PATH* luego de la instalación, pero la mayoría de los pasos de compilación esperan encontrar arm-linux-gnueabihf-gcc y otras herramientas de host a través del *PATH*:
 
-~~~TEXT
+~~~bash
 export PATH=$INSTALL_DIR/bin:$PATH
 ~~~
 
@@ -260,7 +262,7 @@ Este paso instala los archivos de encabezado del kernel de Linux, lo que finalme
 
 Copie los encabezados del kernel en las carpetas anteriores, consulte la [documentación de Raspbian](https://www.raspberrypi.org/documentation/linux/kernel/building.md) para obtener más información:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR/linux
 
 KERNEL=kernel
@@ -277,7 +279,7 @@ mkdir -p $SYSROOT/usr/lib
 
 Para poder utilizar nuestro compilador cruzado debemos incorporar Binutils a nuestra carpeta resultante por ello es que descargamos las fuentes y procedemos a compilarlo:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/binutils
 
 $SRC_DIR/binutils-$BINUTILS_VERSION/configure \
@@ -300,7 +302,7 @@ Todos los pasos restantes implican la construcción de GCC y Glibc. El truco es 
 
 Este paso creará compiladores cruzados de C y C++ de GCC únicamente y los instalará en */bin*. No invocará a esos compiladores para crear bibliotecas todavía:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gcc
 
 $SRC_DIR/gcc-$GCC_VERSION/configure \
@@ -324,7 +326,7 @@ make install-strip-gcc DESTDIR=$INSTALL_DIR
 
 En este paso, instalamos los encabezados de la biblioteca C estándar de Glibc en */include*. También usamos el compilador de C del paso anterior para compilar los archivos de inicio de la biblioteca e instalarlos en */lib*. Finalmente, creamos un par de archivos ficticios que se esperan en el paso siguiente, pero que serán reemplazados en el paso posterior al siguiente:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/glibc
 
 $SRC_DIR/glibc-$GLIBC_VERSION/configure \
@@ -363,7 +365,7 @@ touch $SYSROOT/usr/include/gnu/stubs.h $SYSROOT/usr/include/bits/stdio_lim.h
 
 Este paso utiliza los compiladores cruzados creados dos pasos antes para crear la biblioteca de soporte del compilador. La biblioteca de soporte del compilador contiene algunas excepciones de C++ que manejan código repetitivo, entre otras cosas. Esta biblioteca depende de los archivos de inicio instalados en el paso anterior. La biblioteca en sí es necesaria en el paso siguiente:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gcc
 
 make -j$N_CPUS all-target-libgcc
@@ -374,7 +376,7 @@ make install-target-libgcc DESTDIR=$INSTALL_DIR
 
 En este paso, finalizamos el paquete Glibc, que construye la biblioteca C estándar e instala sus archivos en */lib*:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/glibc
 
 make -j$N_CPUS
@@ -385,7 +387,7 @@ make install DESTDIR=$SYSROOT
 
 Finalmente, terminamos de compilar el paquete GCC de manera completa. Esto nos dará soporte completo a las bibliotecas estándar:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gcc
 
 rm -rf *
@@ -409,7 +411,7 @@ make install-strip DESTDIR=$INSTALL_DIR
 
 Lo siguiente que debemos hacer antes de probar el compilador es construir el depurador que estará incluido en la lista de binarios:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gdb
 
 $SRC_DIR/gdb-$GDB_VERSION/configure \
@@ -434,7 +436,7 @@ Y listo, ahora tenemos el compilador cruzado completo.
 
 Ahora que tenemos el compilador construido, tenemos que testearlo. Para eso genere un hola mundo para pasarlo a la Raspberry Pi y probarlo:
 
-~~~TEXT
+~~~bash
 mkdir -p $BUILD_DIR/test
 cd $BUILD_DIR/test
 
@@ -443,7 +445,7 @@ nano main.cpp
 
 Y añadimos lo siguiente:
 
-~~~TEXT
+~~~c++
 #include <iostream>
 
 using namespace std;
@@ -458,25 +460,25 @@ int main (void)
 
 Debido a que tenemos (si no cerro la terminal desde toda la compilación) la carpeta de nuestro compilador en el PATH, probamos compilar el programa:
 
-~~~TEXT
+~~~bash
 arm-linux-gnueabihf-g++ -Wall main.cpp -o test
 ~~~
 
 No deberia salir ninguna ninguna advertencia ni tampoco ningun error. Por último pasamos el programa a la Raspberry via scp:
 
-~~~TEXT
+~~~bash
 scp test RPI_USER@RPI_IP:~
 ~~~
 
 En la Raspberry Pi ejecutamos:
 
-~~~TEXT
+~~~bash
 ./test
 ~~~
 
 Obteniendo el siguiente resultado:
 
-~~~TEXT
+~~~text
 Hola mundo!!
 ~~~
 
@@ -486,7 +488,7 @@ Si llegaste hasta aca felicitaciones, fuiste capaz de crear tu propio GCC cruzad
 
 Si deseamos podemos comprimir y guardar en caso que querramos distribuirlos o hacer una copia de seguridad, para ello vaya a la carpeta donde instalo los compiladores:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR
 
 tar -czf $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION.tar.xz $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION
@@ -506,7 +508,7 @@ En este caso voy a compilar la última versión de GCC a partir de la construcci
 
 Tenemos que ir a la carpeta de fuentes y limpiar un poco la instalación anterior:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR
 
 rm -rf binutils-$BINUTILS_VERSION gcc-$GCC_VERSION glibc-$GLIBC_VERSION gdb-$GDB_VERSION linux
@@ -518,7 +520,7 @@ rm -rf binutils gcc glibc gdb
 
 Vamos a actualizar las variables de bash para la nueva carpeta:
 
-~~~TEXT
+~~~bash
 export GCC_VERSION="10.2.0"
 
 export INSTALL_DIR="$BUILD_DIR/$INSTALL_DIR_PREFIX-gcc-$GCC_VERSION"
@@ -527,7 +529,7 @@ export SYSROOT="$INSTALL_DIR/$TARGET/libc"
 
 Por ultimo generamos la nueva carpeta de instalación:
 
-~~~TEXT
+~~~bash
 mkdir -p $INSTALL_DIR
 ~~~
 
@@ -535,7 +537,7 @@ mkdir -p $INSTALL_DIR
 
 Descarguemos lo necesario para construir el compilador cruzado. GCC y la última versión del kernel de Raspberry Pi OS:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR
 
 wget https://ftpmirror.gnu.org/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.xz
@@ -553,7 +555,7 @@ mkdir -p $BUILD_DIR/binutils $BUILD_DIR/gcc $BUILD_DIR/glibc $BUILD_DIR/gdb
 
 GCC necesita algunos paquetes extras que debemos descargar dentro de la carpeta de origen:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR/gcc-$GCC_VERSION
 contrib/download_prerequisites
 ~~~
@@ -564,7 +566,7 @@ Este paso instala los archivos de encabezado del kernel de Linux, lo que finalme
 
 Copie los encabezados del kernel en las carpetas anteriores, consulte la [documentación de Raspbian](https://www.raspberrypi.org/documentation/linux/kernel/building.md) para obtener más información:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR/linux
 
 KERNEL=kernel
@@ -583,7 +585,7 @@ Para poder utilizar nuestro compilador cruzado debemos incorporar Binutils a nue
 
 A continuación, construimos Binutils para nuestro compilador GCC:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/binutils
 
 $SRC_DIR/binutils-$BINUTILS_VERSION/configure \
@@ -604,7 +606,7 @@ make install-strip DESTDIR=$INSTALL_DIR
 
 Ya que no hemos cerrado la terminal, el compilador anterior que creamos sigue en el *PATH*, por lo que utilizaremos este para construir nuevamente las librerías estándar:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/glibc
 
 $SRC_DIR/glibc-$GLIBC_VERSION/configure \
@@ -627,7 +629,7 @@ make install DESTDIR=$SYSROOT
 
 Ahora que tenemos Glibc construido con el compilador compatible, podemos generar el nuevo GCC de manera directa:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gcc
 
 $SRC_DIR/gcc-$GCC_VERSION/configure \
@@ -649,7 +651,7 @@ make install-strip DESTDIR=$INSTALL_DIR
 
 Lo siguiente que debemos hacer antes de probar el compilador es construir el depurador que estará incluido en la lista de binarios:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gdb
 
 $SRC_DIR/gdb-$GDB_VERSION/configure \
@@ -674,13 +676,13 @@ Y listo, ahora tenemos el compilador cruzado completo.
 
 Ahora que tenemos el compilador construido, tenemos que testearlo. Para eso genere un hola mundo para pasarlo a la Raspberry Pi y probarlo. Pero antes tenemos que exportar la nueva ubicación del compilador al *PATH*:
 
-~~~TEXT
+~~~bash
 export PATH=$INSTALL_DIR/bin:$PATH
 ~~~
 
 Ya que ahora exportamos el nuevo compilador al *PATH*, podemos invocarlo para compilar la aplicación de prueba:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/test
 
 arm-linux-gnueabihf-g++ -Wall main.cpp -o test
@@ -688,19 +690,19 @@ arm-linux-gnueabihf-g++ -Wall main.cpp -o test
 
 No deberia salir ninguna ninguna advertencia ni tampoco ningun error. Por último pasamos el programa a la Raspberry via scp:
 
-~~~TEXT
+~~~bash
 scp test RPI_USER@RPI_IP:~
 ~~~
 
 Y en la Raspberry Pi ejecutamos:
 
-~~~TEXT
+~~~bash
 ./test
 ~~~
 
 Obteniendo el siguiente resultado:
 
-~~~TEXT
+~~~text
 Hola mundo!!
 ~~~
 
@@ -710,7 +712,7 @@ Si llegaste hasta aca felicitaciones, fuiste capaz de crear tu propio GCC cruzad
 
 Si queremos guardar el Toolchain mas reciente ejecutamos:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR
 
 tar -czf $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION.tar.xz $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION

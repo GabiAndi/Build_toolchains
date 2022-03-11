@@ -1,6 +1,6 @@
 # Constuir toolchain cruzado para ARM Qt con sistema Linux
 
-**Aclaración:** ***este documento se revisó por ultima vez el 26 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Constuir toolchain cruzado para ARM Qt con sistema Linux](#constuir-toolchain-cruzado-para-arm-qt-con-sistema-linux)
@@ -42,7 +42,7 @@
 
 ## Introducción
 
-Este tutorial busca guiarlo en la configuración de la Raspberry Pi y del sistema anfitrion, para lograr compilar programas Qt desde nuestra PC y probarlos en la Raspberry Pi. Para ello se utilizó la última versión de ***Raspberry Pi OS*** y un host con sistema con ***Linux Mint***.
+Este tutorial busca guiarlo en la configuración de la Raspberry Pi y del sistema anfitrion, para lograr compilar programas Qt desde nuestra PC y probarlos en la Raspberry Pi. Para ello se utilizó la última versión de ***Raspberry Pi OS*** y un host con sistema con ***Arch Linux***.
 
 ## Referencias
 
@@ -79,7 +79,7 @@ En nuestro caso buscamos una implementación de Qt con Opengl ES2.
 
 Para luego tener todo referenciado, creamos un par de variables de bash:
 
-~~~TEXT
+~~~bash
 export TODAY=$(date +'%Y-%m-%d')
 
 export RPI_VERSION="1"
@@ -93,7 +93,7 @@ export RPI_IMG_SHA256="f6e2a3e907789ac25b61f7acfcbf5708a6d224cf28ae12535a2dc1d76
 
 Una vez tengamos el archivo .zip, nos vamos hacia la carpeta que lo contiene, lo verificamos y descomprimimos:
 
-~~~TEXT
+~~~bash
 echo $RPI_IMG_SHA256 $RPI_IMG_NAME.zip && sha256sum $RPI_IMG_NAME.zip
 
 unzip $RPI_IMG_NAME.zip
@@ -101,7 +101,7 @@ unzip $RPI_IMG_NAME.zip
 
 Insertamos la targeta SD en donde se instalará el sistema. Formateamos la SD y grabamos la imagen. Podemos utilizar cualquier utilidad de discos, en mi caso utilice la utilidad *dd*:
 
-~~~TEXT
+~~~bash
 sudo dd if=$RPI_IMG_NAME.img of=/dev/mmcblk0 status=progress
 
 sync
@@ -109,7 +109,7 @@ sync
 
 Para poder contar con SSH desde el primer arranque, debemos crear un archivo vacio en la partición */boot* con nombre *ssh* o *ssh.txt*:
 
-~~~TEXT
+~~~bash
 sudo mkdir /media/$USER/raspi-boot
 sudo mount /dev/mmcblk0p1 /media/$USER/raspi-boot
 
@@ -125,19 +125,19 @@ Ya puede desconectar su targeta SD y encender su Raspberry Pi.
 
 Escanee la IP que tomo la Raspberry Pi:
 
-~~~TEXT
+~~~bash
 nmap 192.168.1.2-254 -p 22
 ~~~
 
 Ahora añada la siguiente variables bash:
 
-~~~TEXT
+~~~bash
 export RPI_IP="192.168.1.75"
 ~~~
 
 Puede generar un conjunto de llaves SSH y transferirla a la Raspberry Pi con los siguientes comandos:
 
-~~~TEXT
+~~~bash
 ssh-keygen -t rsa -b 4096 -C $USER -f $HOME/.ssh/id_rsa_rpi$RPI_VERSION
 
 ssh-copy-id -i $HOME/.ssh/id_rsa_rpi$RPI_VERSION $RPI_USER@$RPI_IP
@@ -145,7 +145,7 @@ ssh-copy-id -i $HOME/.ssh/id_rsa_rpi$RPI_VERSION $RPI_USER@$RPI_IP
 
 Ingrese el usuario ***pi*** y la contraseña ***raspberry***. Luego ya puede conectarse a la Raspberry Pi con la llave generada:
 
-~~~TEXT
+~~~bash
 ssh $RPI_USER@$RPI_IP
 ~~~
 
@@ -155,7 +155,7 @@ Esto le ahorrara tiempo para poder conectarse y para poder utilizar los comandos
 
 Lo primero que debe hacer, una vez se conecte a la Raspberry Pi, es configurarla. Para ello ejecute el comando:
 
-~~~TEXT
+~~~bash
 sudo raspi-config
 ~~~
 
@@ -163,7 +163,7 @@ Realizamos la configuración de periféricos, wifi y demás. Cuando terminemos r
 
 Como paso siguiente actualizamos todo:
 
-~~~TEXT
+~~~bash
 sudo apt update && sudo apt upgrade -y && sudo rpi-update
 ~~~
 
@@ -173,7 +173,7 @@ Luego de esto debe reiniciar la Raspberry Pi y ya la tendremos lista para comenz
 
 Más adelante en esta guía, usaremos el comando ***rsync*** para sincronizar archivos entre el Host y la Raspberry Pi. Para algunos de estos archivos, se requieren derechos de root. Puede hacer esto con un solo comando de terminal de la siguiente manera:
 
-~~~TEXT
+~~~bash
 echo "$USER ALL=NOPASSWD:$(which rsync)" | sudo tee --append /etc/sudoers
 ~~~
 
@@ -183,25 +183,25 @@ Procedemos a instalar los paquetes y las dependencias necesarias para compilar n
 
 **Programas para la Raspberry Pi:**
 
-~~~TEXT
+~~~bash
 sudo apt install gdbserver screen mc htop rsync git
 ~~~
 
 **Librerias para la Raspberry Pi:**
 
-~~~TEXT
+~~~bash
 sudo apt install libncurses6 libncursesw6 libncurses-dev libgmp-dev libisl-dev libexpat1-dev
 ~~~
 
 **Programas y utilidades extras:**
 
-~~~TEXT
+~~~bash
 sudo apt install build-essential gdb python3 python3-dev python2 python2-dev doxygen openssl unzip wget texinfo texlive autoconf automake gettext gperf autogen guile-3.0 guile-3.0-dev flex patch diffutils ninja-build bison cmake cmake-data dh-exec diffstat graphviz meson
 ~~~
 
 **Libreria de GPIO (WiringPi):**
 
-~~~TEXT
+~~~bash
 mkdir temp
 
 cd temp
@@ -217,61 +217,61 @@ rm -rf temp
 
 Puedes comprobarlo con:
 
-~~~TEXT
+~~~bash
 gpio readall
 ~~~
 
 **Requerimientos de Qt para X11:**
 
-~~~TEXT
+~~~bash
 sudo apt install libfontconfig1-dev libfreetype6-dev libx11-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev xorg-dev libgtk-3-dev libudev-dev libinput-dev libts-dev libmtdev-dev libssl-dev libdbus-1-dev libglib2.0-dev libxcb-xv0-dev libwxgtk3.0-gtk3-dev '^libxcb.*-dev' '^libxkb.*-dev' autopoint debhelper dh-autoreconf dh-strip-nondeterminism dwz intltool-debian libarchive-zip-perl libdebhelper-perl libfile-stripnondeterminism-perl libsub-override-perl po-debconf xutils-dev quilt xvfb libcdt5 libcgraph6 libgts-0.7-5 libgvc6 libgvpr2 libjsoncpp24 liblab-gamut1 libpathplan4 librhash0 comerr-dev default-libmysqlclient-dev firebird-dev firebird3.0-common firebird3.0-common-doc freetds-common freetds-dev krb5-multidev libasound2-dev libct4 libcups2-dev libcupsimage2-dev libdouble-conversion-dev libfbclient2 libgssrpc4 libib-util libkadm5clnt-mit12 libkadm5srv-mit12 libkdb5-10 libkrb5-dev libmariadb-dev-compat libmd4c-dev libodbc1 libpq-dev libpq5 libproxy-dev libpulse-dev libpulse-mainloop-glib0 libsybdb5 libtommath1 libzstd-dev odbcinst odbcinst1debian2 pkg-kde-tools unixodbc-dev
 ~~~
 
 **Requerimientos de Qt para OpenGL ES2:**
 
-~~~TEXT
+~~~bash
 sudo apt install libglew-dev libglfw3-dev libgles2-mesa-dev libgbm-dev libdrm-dev kmscube
 ~~~
 
 Podemos verificar la instalación. Ya que es necesario glesv2 (solo funciona en modo consola):
 
-~~~TEXT
+~~~bash
 kmscube
 ~~~
 
 **Requerimientos de Qt para formato de imagenes:**
 
-~~~TEXT
+~~~bash
 sudo apt install libjpeg-dev libpng-dev
 ~~~
 
 **Requerimientos de Qt para base de datos:**
 
-~~~TEXT
+~~~bash
 sudo apt install libsqlite3-dev libmariadb-dev
 ~~~
 
 **Requerimientos de Qt para multimedia:**
 
-~~~TEXT
+~~~bash
 sudo apt install libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev
 ~~~
 
 **Requerimientos de Qt para multimedia gstreamer:**
 
-~~~TEXT
+~~~bash
 sudo apt install libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 ~~~
 
 **Requerimientos de Qt para Audio:**
 
-~~~TEXT
+~~~bash
 sudo apt install libopenal-data libsndio7.0 libopenal1 libopenal-dev pulseaudio
 ~~~
 
 **Requerimientos de Qt para Bluetooth:**
 
-~~~TEXT
+~~~bash
 sudo apt install bluez-tools libbluetooth-dev
 ~~~
 
@@ -281,13 +281,13 @@ Ya que es mas fácil y rápido conectar la Raspberry Pi a nuestra computadora me
 
 Editamos el archivo **/etc/dhcpcd.conf**:
 
-~~~TEXT
+~~~bash
 sudo nano /etc/dhcpcd.conf
 ~~~
 
 Y en la parte final añadimos las siguientes lineas:
 
-~~~TEXT
+~~~text
 interface eth0
 static ip_address=192.168.1.100/24
 ~~~
@@ -298,7 +298,7 @@ Reiniciamos la Raspberry Pi y listo, terminamos de realizar la configuración. P
 
 Actualizamos la variable de bash por la que configuramos en la Raspberry Pi:
 
-~~~TEXT
+~~~bash
 export RPI_IP="192.168.1.100"
 ~~~
 
@@ -306,7 +306,7 @@ export RPI_IP="192.168.1.100"
 
 En este punto es recomendable guardar una copia del estado actual de la tarjeta SD, en el caso que una configuración o comando erróneo rompa la instalación, podremos volver hasta este punto muy fácilmente. Lo podemos hacer con *dd*:
 
-~~~TEXT
+~~~bash
 sudo dd if=/dev/mmcblk0 of="rpi$RPI_VERSION-($TODAY).img" status=progress
 
 sudo chown $USER:$USER "rpi$RPI_VERSION-($TODAY).img"
@@ -318,17 +318,17 @@ sudo chown $USER:$USER "rpi$RPI_VERSION-($TODAY).img"
 
 Nos aseguramos de tener bien actualizado nuestro sistema, luego, deberemos instalar paquetes necesarios para la compilación de nuestro toolchain:
 
-~~~TEXT
-sudo apt update && sudo apt upgrade -y
+~~~bash
+sudo pacman -Syu
 
-sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
+sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
 ~~~
 
 ### Creamos mas variables bash ***(Host)***
 
 Vamos a generar un par de variables mas para evitar errores de tipeo:
 
-~~~TEXT
+~~~bash
 export TARGET="arm-linux-gnueabihf"
 
 export QT_VERSION_MAJOR=6
@@ -351,7 +351,7 @@ export QT_INSTALL_DIR="$INSTALL_DIR/qt$QT_VERSION"
 
 Puede utilizar los siguientes comandos para crear una carpeta y utilizarla como espacio de trabajo para crear archivos binarios de Qt:
 
-~~~TEXT
+~~~bash
 mkdir -p $WORK_DIR $SRC_DIR $BUILD_DIR
 sudo mkdir -p $INSTALL_DIR $SYSROOT $SYSROOT/usr $SYSROOT/opt $QT_INSTALL_DIR
 sudo chown $USER:$USER -R $INSTALL_DIR
@@ -361,15 +361,22 @@ sudo chown $USER:$USER -R $INSTALL_DIR
 
 Ahora, podemos descargar los archivos fuente más recientes para Qt. Ejecutamos el siguiente comando para descargar los archivos fuente:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR
 
 wget http://download.qt.io/archive/qt/$QT_VERSION_MAJOR.$QT_VERSION_MINOR/$QT_VERSION/single/qt-everywhere-src-$QT_VERSION.tar.xz
+wget http://download.qt.io/archive/qt/$QT_VERSION_MAJOR.$QT_VERSION_MINOR/$QT_VERSION/single/md5sums.txt
 ~~~
 
-Una vez descargado el archivo, lo extraemos:
+Una vez descargado el archivo, lo verificamos:
 
-~~~TEXT
+~~~bash
+md5sum qt-everywhere-src-$QT_VERSION.tar.xz && cat md5sums.txt
+~~~
+
+Si la suma coincide extraemos:
+
+~~~bash
 tar -xf qt-everywhere-src-$QT_VERSION.tar.xz
 ~~~
 
@@ -377,7 +384,7 @@ tar -xf qt-everywhere-src-$QT_VERSION.tar.xz
 
 Para compilar binarios de una arquitectura a otra necesitamos un compilador cruzado. Podemos descargarlo [o crear uno propio.](arm-linux.md) Luego procedemos a copiarlo en la carpeta de instalación:
 
-~~~TEXT
+~~~bash
 export CROSS_COMPILER_NAME="cross-pi-1-gcc-10.2.0"
 
 tar -xf $CROSS_COMPILER_NAME.tar.xz -C $INSTALL_DIR
@@ -393,28 +400,28 @@ Este paso es muy importante. Lo que vamos a hacer es copiar todo el contenido de
 
 Esta es la forma mas rápida de copiar los archivos, ya que se inserta la SD en el Host y se copian directamente los archivos sin necesidad de verse limitado por la velocidad de conexión:
 
-~~~TEXT
-sudo mkdir /media/$USER/raspi-root
-sudo mount /dev/mmcblk0p2 /media/$USER/raspi-root
+~~~bash
+mkdir raspi-root
+sudo mount /dev/mmcblk0p2 raspi-root
 
-sudo cp -r /media/$USER/raspi-root/lib $SYSROOT
-sudo cp -r /media/$USER/raspi-root/usr/include $SYSROOT/usr
-sudo cp -r /media/$USER/raspi-root/usr/lib $SYSROOT/usr
-sudo cp -r /media/$USER/raspi-root/usr/local $SYSROOT/usr
-sudo cp -r /media/$USER/raspi-root/usr/share $SYSROOT/usr
-sudo cp -r /media/$USER/raspi-root/opt/vc $SYSROOT/opt
+sudo cp -r raspi-root/lib $SYSROOT
+sudo cp -r raspi-root/usr/include $SYSROOT/usr
+sudo cp -r raspi-root/usr/lib $SYSROOT/usr
+sudo cp -r raspi-root/usr/local $SYSROOT/usr
+sudo cp -r raspi-root/usr/share $SYSROOT/usr
+sudo cp -r raspi-root/opt/vc $SYSROOT/opt
 
 sudo chown $USER:$USER -R $SYSROOT
 
-sudo umount /media/$USER/raspi-root
-sudo rm -rf /media/$USER/raspi-root
+sudo umount raspi-root
+sudo rm -rf raspi-root
 ~~~
 
 #### Sincronización mediante el comando *rsync* (mas lento)
 
 Podemos sincronizar remotamente los archivos con los siguientes comandos a travez de rsync. El unico inconveniente es que demora mas que la alternativa anterior:
 
-~~~TEXT
+~~~bash
 rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/lib $SYSROOT
 rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/usr/include $SYSROOT/usr
 rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/usr/lib $SYSROOT/usr
@@ -427,13 +434,13 @@ rsync -az --rsync-path="sudo rsync" $RPI_USER@$RPI_IP:/opt/vc $SYSROOT/opt
 
 Los archivos que copiamos en el paso anterior todavía tienen enlaces simbólicos que apuntan al sistema de archivos en la Raspberry Pi (direccionamiento absoluto). Necesitamos modificar esto para que se conviertan en enlaces relativos desde el nuevo directorio sysroot en la máquina host. Podemos hacer esto con un script de Python, que descargamos de la siguiente manera:
 
-~~~TEXT
+~~~bash
 wget https://raw.githubusercontent.com/abhiTronix/rpi_rootfs/master/scripts/sysroot-relativelinks.py
 ~~~
 
 Una vez que se descarga, solo necesita hacerlo ejecutable y correrlo usando los siguientes comandos:
 
-~~~TEXT
+~~~bash
 chmod +x sysroot-relativelinks.py
 ./sysroot-relativelinks.py $SYSROOT
 ~~~
@@ -446,7 +453,7 @@ Cuando se enlazan las bibliotecas, puede ser que estas no se encuentren porque f
 
 La solución es crear el archivo en el sysroot:
 
-~~~TEXT
+~~~bash
 mkdir $SYSROOT/etc
 
 nano $SYSROOT/etc/ld.so.conf
@@ -454,7 +461,7 @@ nano $SYSROOT/etc/ld.so.conf
 
 Y añadimos las rutas en donde tenemos las bibliotecas:
 
-~~~TEXT
+~~~text
 /lib/arm-linux-gnueabihf
 /usr/lib/arm-linux-gnueabihf
 /usr/lib/arm-linux-gnueabihf/libfakeroot
@@ -466,7 +473,7 @@ Y añadimos las rutas en donde tenemos las bibliotecas:
 
 Creamos el archivo *toolchain.cmake* que hará que nuestra cadena de herramientas este configurada a nuestro gusto:
 
-~~~TEXT
+~~~bash
 cd $INSTALL_DIR
 
 nano toolchain.cmake
@@ -474,7 +481,7 @@ nano toolchain.cmake
 
 Recuerde que cada variable dependerá de las rutas de sus herramientas y carpetas de destino. Añada y modifique lo siguiente:
 
-~~~TEXT
+~~~cmake
 cmake_minimum_required(VERSION 3.18)
 
 include_guard(GLOBAL)
@@ -500,7 +507,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 Ahora si podemos realizar la configuración del toolchain de Qt:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR
 
 cmake \
@@ -531,13 +538,13 @@ Si no se emitio ningun error, verifique que se habilitaron las caracteristicas q
 
 Si quiere volver a configurar tendra que borrar todo en el directorio:
 
-~~~TEXT
+~~~bash
 rm -rf *
 ~~~
 
 Si todo salio bien, ahora podrá construir los binarios de Qt. Este proceso demorará su tiempo:
 
-~~~TEXT
+~~~bash
 cmake --build . --parallel
 cmake --install .
 ~~~
@@ -546,7 +553,7 @@ cmake --install .
 
 Ahora que tenemos compilados los binarios de Qt, tenemos que pasarlos a la Raspberry Pi:
 
-~~~TEXT
+~~~bash
 rsync -az --rsync-path="sudo rsync" $QT_INSTALL_DIR $RPI_USER@$RPI_IP:/usr/local
 
 cp -r $QT_INSTALL_DIR $SYSROOT/usr/local
@@ -556,7 +563,7 @@ cp -r $QT_INSTALL_DIR $SYSROOT/usr/local
 
 Ingrese el siguiente comando para actualizar el dispositivo permitiendo que el enlazador encuentre los nuevos archivos binarios Qt:
 
-~~~TEXT
+~~~bash
 echo /usr/local/qt$QT_VERSION/lib | sudo tee /etc/ld.so.conf.d/qt$QT_VERSION.conf
 
 sudo ldconfig
@@ -592,7 +599,7 @@ En la pestaña ***Kits*** tenemos que agregar toda la configuración que hicimos
 
 Por último lo que debemos hacer en la pestaña de kits es irnos a editar las banderas por defecto de CMake, y añadir lo siguiente:
 
-~~~TEXT
+~~~text
 QT_HOST_PATH:PATH=%{Qt:QT_HOST_PREFIX}
 CMAKE_SYSROOT:PATH=/opt/qt$RPI_NAME/sysroot
 ~~~
@@ -603,7 +610,7 @@ Y listo tenemos nuestra Raspberry Pi y su conjunto de herramientas ya instalado 
 
 Para poder correr remotamente nuestra aplicación, debemos añadir la siguiente linea en el *CMakeLists.txt* de nuestro proyecto:
 
-~~~TEXT
+~~~cmake
 set(INSTALL_DESTDIR "/home/pi/${PROJECT_NAME}")
 
 install(TARGETS ${PROJECT_NAME}

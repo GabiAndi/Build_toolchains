@@ -1,6 +1,6 @@
 # Construir Toolchain para ARM Bare Metal
 
-**Aclaración:** ***este documento se revisó por ultima vez el 27 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Construir Toolchain para ARM Bare Metal](#construir-toolchain-para-arm-bare-metal)
@@ -87,12 +87,12 @@ Es importante saber que no todas las versiones de Newlib son compatibles con tod
 
 ### Preparamos el Host
 
-Yo utilizo **Linux Mint** que es un sistema operativo basado en **Debian**, por lo que todo lo haré con el gestor de paquetes apt:
+Yo utilizo **Arch Linux** que es un sistema operativo roling release, por lo que todo lo haré con el gestor de paquetes pacman:
 
-~~~TEXT
-sudo apt update && sudo apt upgrade -y
+~~~bash
+sudo pacman -Syu
 
-sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
+sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
 ~~~
 
 ### Preparando la estructura de carpetas
@@ -106,13 +106,13 @@ Ruta de instalación se refiere a donde se guardaran los binarios compilados del
 
 Antes de eso, para poder hacer mas sencilla la escritura de comandos, y así evitar errores de tipeo, voy a exportar las rutas y configuraciones como variables de bash:
 
-~~~TEXT
+~~~bash
 export N_CPUS="$(nproc)"
 
-export BINUTILS_VERSION="2.37"
-export GCC_VERSION="10.2.0"
+export BINUTILS_VERSION="2.38"
+export GCC_VERSION="11.2.0"
 export NEWLIB_VERSION="4.1.0"
-export GDB_VERSION="10.2"
+export GDB_VERSION="11.2"
 
 export TARGET="arm-none-eabi"
 export TARGET_OPTIONS="--with-arch=armv6zk --with-fpu=vfp --with-float=hard --with-mode=arm"
@@ -132,7 +132,7 @@ export SAVE_TOOLCHAIN_DIR="$HOME"
 
 Creamos las carpetas base en donde construiremos todo:
 
-~~~TEXT
+~~~bash
 mkdir -p $SRC_DIR $BUILD_DIR $INSTALL_DIR
 ~~~
 
@@ -142,7 +142,7 @@ Descarguemos lo necesario para construir el compilador cruzado. Binutils, Newlib
 
 Para la biblioteca estandar en mi caso utilizaré Newlib, ya que se adapta mejor a sistemas embebidos o bare metal:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR
 
 wget https://ftpmirror.gnu.org/binutils/binutils-$BINUTILS_VERSION.tar.xz
@@ -162,14 +162,14 @@ mkdir -p $BUILD_DIR/binutils $BUILD_DIR/gcc $BUILD_DIR/newlib $BUILD_DIR/gdb
 
 GCC necesita algunos paquetes extras que debemos descargar dentro de la carpeta de origen:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR/gcc-$GCC_VERSION
 contrib/download_prerequisites
 ~~~
 
 Ademas, para contruir Newlib junto a GCC tenemos que crear una serie de enlaces simbólicos:
 
-~~~TEXT
+~~~bash
 ln -s ../newlib-$NEWLIB_VERSION/newlib .
 ln -s ../newlib-$NEWLIB_VERSION/libgloss .
 ~~~
@@ -178,7 +178,7 @@ ln -s ../newlib-$NEWLIB_VERSION/libgloss .
 
 Durante todo el proceso de compilación, asegúrese de que el subdirectorio */bin* de la instalación esté en su *PATH*. Puede eliminar este directorio del *PATH* luego de la instalación, pero la mayoría de los pasos de compilación esperan encontrar arm-none-eabi-gcc y otras herramientas de host a través del *PATH*:
 
-~~~TEXT
+~~~bash
 export PATH=$INSTALL_DIR/bin:$PATH
 ~~~
 
@@ -188,7 +188,7 @@ Para poder utilizar nuestro compilador cruzado debemos incorporar Binutils a nue
 
 A continuación, construimos Binutils para nuestro compilador GCC:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/binutils
 
 $SRC_DIR/binutils-$BINUTILS_VERSION/configure \
@@ -207,7 +207,7 @@ make install-strip DESTDIR=$INSTALL_DIR
 
 Para Newlib es posible compilar GCC de manera directa, para hacer eso creamos los enlaces simbolicos desde la carpeta de fuentes de Newlib hasta la de fuentes de GCC. Ahora solo hace falta construir:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gcc
 
 $SRC_DIR/gcc-$GCC_VERSION/configure \
@@ -228,7 +228,7 @@ make install DESTDIR=$INSTALL_DIR
 
 Lo siguiente que debemos hacer antes de probar el compilador es construir el depurador que estará incluido en la lista de binarios:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR/gdb
 
 $SRC_DIR/gdb-$GDB_VERSION/configure \
@@ -251,7 +251,7 @@ Y listo, ahora tenemos el compilador cruzado completo.
 
 Si deseamos podemos comprimir y guardar en caso que querramos distribuirlos o hacer una copia de seguridad, para ello vaya a la carpeta donde instalo los compiladores:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR
 
 tar -czf $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION.tar.xz $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION

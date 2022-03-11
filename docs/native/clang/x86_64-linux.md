@@ -1,6 +1,6 @@
 # Construir toolchain nativo
 
-**Aclaración:** ***este documento se revisó por última vez el 20 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por última vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Construir toolchain nativo](#construir-toolchain-nativo)
@@ -8,7 +8,7 @@
   - [Introducción](#introducción)
   - [Referencias](#referencias)
   - [Construcción del toolchain](#construcción-del-toolchain)
-    - [Preparando el sistema](#preparando-el-sistema)
+    - [Preparamos el sistema](#preparamos-el-sistema)
     - [Preparando el entorno de compilación](#preparando-el-entorno-de-compilación)
     - [Descargamos las fuentes](#descargamos-las-fuentes)
     - [Construimos el compilador](#construimos-el-compilador)
@@ -29,14 +29,14 @@ Le recomiendo que **lea a conciencia**. El copiar y pegar comandos como un loco 
 
 ## Construcción del toolchain
 
-### Preparando el sistema
+### Preparamos el sistema
 
-Primero, asegúrese de que su sistema esté actualizado e instale las dependencias necesarias. Dependiendo de su distribución deberá instalar los paquetes necesarios, en mi caso, para Linux Mint:
+Yo utilizo **Arch Linux** que es un sistema operativo roling release, por lo que todo lo haré con el gestor de paquetes pacman:
 
-~~~TEXT
-sudo apt update && sudo apt upgrade -y
+~~~bash
+sudo pacman -Syu
 
-sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
+sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
 ~~~
 
 La mayoría de las dependencias ya vienen instaladas en un sistema Linux, sin embargo, puede que mas adelante en la construcción aparezcan errores debido a paquetes que no se encuentren, usted debe corregir esto para poder realizar la compilación con éxito.
@@ -52,7 +52,7 @@ En las siguientes instrucciones, asumiré que está realizando todos los pasos e
 
 Antes de eso, para poder hacer mas sencilla la escritura de comandos, y así evitar errores de tipeo, voy a exportar las rutas como variables de bash:
 
-~~~TEXT
+~~~bash
 export WORK_DIR="$HOME/build-toolchain"
 export SRC_DIR="$WORK_DIR/src"
 export BUILD_DIR="$WORK_DIR/build"
@@ -62,7 +62,7 @@ export INSTALL_DIR="/opt/clang"
 
 Creamos las carpetas base en donde construiremos todo:
 
-~~~TEXT
+~~~bash
 mkdir -p $WORK_DIR $SRC_DIR $BUILD_DIR
 sudo mkdir -p $INSTALL_DIR
 sudo chown 1000:1000 -R $INSTALL_DIR
@@ -74,7 +74,7 @@ La ruta de instalación puede ser cualquier carpeta, aunque recomiendo no coloca
 
 Descarguemos las fuentes que usaremos para construir el compilador:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR
 
 git clone https://github.com/llvm/llvm-project.git
@@ -84,7 +84,7 @@ git clone https://github.com/llvm/llvm-project.git
 
 Ahora que tenemos todas las fuentes nos vamos a la carpeta de construcción y contruimos:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR
 
 cmake \
@@ -103,7 +103,7 @@ cmake \
 
 Si todo se construyo de manera correcta ahora puede compilar e instalar:
 
-~~~TEXT
+~~~bash
 cmake --build . --parallel 2
 cmake --install .
 ~~~

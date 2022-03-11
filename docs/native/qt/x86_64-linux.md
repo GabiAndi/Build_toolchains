@@ -1,6 +1,6 @@
 # Constuir Toolchain nativo con Qt
 
-**Aclaración:** ***este documento se revisó por ultima vez el 14 de febrero del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Constuir Toolchain nativo con Qt](#constuir-toolchain-nativo-con-qt)
@@ -11,7 +11,7 @@
     - [Configuración de las dependencias](#configuración-de-las-dependencias)
     - [Instalar los paquetes de desarrollo](#instalar-los-paquetes-de-desarrollo)
     - [Variables de entorno y carpetas](#variables-de-entorno-y-carpetas)
-    - [Obtener los binarios de Qt](#obtener-los-binarios-de-qt)
+    - [Obtener los binarios de Qt ***(Host)***](#obtener-los-binarios-de-qt-host)
     - [Configurando Qt](#configurando-qt)
   - [Configuración de Qt Creator](#configuración-de-qt-creator)
     - [Agregar la versión de Qt](#agregar-la-versión-de-qt)
@@ -36,12 +36,12 @@ Le recomiendo que **lea a conciencia**. El copiar y pegar comandos como un loco 
 
 ### Configuración de las dependencias
 
-Nos aseguramos de tener bien actualizado nuestro sistema, luego, deberemos instalar paquetes necesarios para la compilación de nuestro toolchain:
+Nos aseguramos de tener bien actualizado nuestro sistema, luego, deberemos instalar paquetes necesarios para la compilación de nuestro toolchain. Yo utilizo **Arch Linux** que es un sistema operativo roling release, por lo que todo lo haré con el gestor de paquetes pacman:
 
-~~~TEXT
-sudo apt update && sudo apt upgrade -y
+~~~bash
+sudo pacman -Syu
 
-sudo apt install -y build-essential python3 python3-dev python-is-python3 python2 python2-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync texinfo texlive autoconf automake gettext gperf autogen guile-3.0 flex patch diffutils libgmp-dev libisl-dev libexpat-dev clang llvm cmake ninja-build meson graphviz diffstat dh-exec
+sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
 ~~~
 
 ### Instalar los paquetes de desarrollo
@@ -50,55 +50,55 @@ Procedemos a instalar los paquetes y las dependencias necesarias para compilar n
 
 **Programas:**
 
-~~~TEXT
+~~~bash
 sudo apt install gdbserver screen mc htop rsync git
 ~~~
 
 **Librerias:**
 
-~~~TEXT
+~~~bash
 sudo apt install libncurses6 libncursesw6 libncurses-dev libgmp-dev libisl-dev libexpat1-dev
 ~~~
 
 **Requerimientos de Qt para X11:**
 
-~~~TEXT
+~~~bash
 sudo apt install libfontconfig1-dev libfreetype6-dev libx11-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-util-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev xorg-dev libgtk-3-dev libudev-dev libinput-dev libts-dev libmtdev-dev libssl-dev libdbus-1-dev libglib2.0-dev libxcb-xv0-dev libwxgtk3.0-gtk3-dev '^libxcb.*-dev' '^libxkb.*-dev'
 ~~~
 
 **Requerimientos de Qt para formato de imagenes:**
 
-~~~TEXT
+~~~bash
 sudo apt install libjpeg-dev libpng-dev
 ~~~
 
 **Requerimientos de Qt para base de datos:**
 
-~~~TEXT
+~~~bash
 sudo apt install libsqlite3-dev libmariadb-dev
 ~~~
 
 **Requerimientos de Qt para multimedia:**
 
-~~~TEXT
+~~~bash
 sudo apt install libtiff-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev
 ~~~
 
 **Requerimientos de Qt para multimedia gstreamer:**
 
-~~~TEXT
+~~~bash
 sudo apt install libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 ~~~
 
 **Requerimientos de Qt para Audio:**
 
-~~~TEXT
+~~~bash
 sudo apt install libopenal-data libsndio7.0 libopenal1 libopenal-dev pulseaudio
 ~~~
 
 **Requerimientos de Qt para Bluetooth:**
 
-~~~TEXT
+~~~bash
 sudo apt install bluez-tools libbluetooth-dev
 ~~~
 
@@ -106,7 +106,7 @@ sudo apt install bluez-tools libbluetooth-dev
 
 Vamos a declarar un par de variables de entorno que mas tarde utilizaremos:
 
-~~~TEXT
+~~~bash
 export QT_VERSION_MAJOR=6
 export QT_VERSION_MINOR=2
 export QT_SUBVERSION=3
@@ -123,26 +123,33 @@ export INSTALL_DIR="/opt/qt/$QT_VERSION/gcc_64_$QT_BUILD_TYPE"
 
 Procedemos a crear las carpetas
 
-~~~TEXT
+~~~bash
 mkdir -p $WORK_DIR $SRC_DIR $BUILD_DIR
 sudo mkdir -p $INSTALL_DIR
 
 sudo chown $USER:$USER $INSTALL_DIR -R 
 ~~~
 
-### Obtener los binarios de Qt
+### Obtener los binarios de Qt ***(Host)***
 
 Ahora, podemos descargar los archivos fuente más recientes para Qt. Ejecutamos el siguiente comando para descargar los archivos fuente:
 
-~~~TEXT
+~~~bash
 cd $SRC_DIR
 
 wget http://download.qt.io/archive/qt/$QT_VERSION_MAJOR.$QT_VERSION_MINOR/$QT_VERSION/single/qt-everywhere-src-$QT_VERSION.tar.xz
+wget http://download.qt.io/archive/qt/$QT_VERSION_MAJOR.$QT_VERSION_MINOR/$QT_VERSION/single/md5sums.txt
 ~~~
 
-Una vez descargado el archivo, lo extraemos:
+Una vez descargado el archivo, lo verificamos:
 
-~~~TEXT
+~~~bash
+md5sum qt-everywhere-src-$QT_VERSION.tar.xz && cat md5sums.txt
+~~~
+
+Si la suma coincide extraemos:
+
+~~~bash
 tar -xf qt-everywhere-src-$QT_VERSION.tar.xz
 ~~~
 
@@ -150,7 +157,7 @@ tar -xf qt-everywhere-src-$QT_VERSION.tar.xz
 
 Ahora si podemos realizar la configuración del toolchain de Qt:
 
-~~~TEXT
+~~~bash
 cd $BUILD_DIR
 
 cmake \
@@ -171,13 +178,13 @@ Si no se emitio ningun error, verifique que se habilitaron las caracteristicas q
 
 Si quiere volver a configurar tendra que borrar todo en el directorio:
 
-~~~TEXT
+~~~bash
 rm -rf *
 ~~~
 
 Si todo salio bien, ahora podrá construir los binarios de Qt. Este proceso demorará su tiempo:
 
-~~~TEXT
+~~~bash
 cmake --build . --parallel
 cmake --install .
 ~~~

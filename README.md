@@ -16,7 +16,7 @@ Es por eso que realizo esta serie de instructivos. Un poco para acordarme lo que
 
 Aclaro que no soy ningún experto en el tema, y que seguramente, todo lo que hice se pueda mejorar.
 
-Aclaro que no soy ningún experto en el tema, y que seguramente, todo lo que hice se pueda mejorar. Todas las guías están orientadas a un entorno GNU/Linux, no hay nada de Windows por aquí. Tomé esta decición debido a la complejidad excesiva y a la falta de documentación para generar cadenas de herramientas GNU en Windows. Probe hacer esto con MinGW, MSYS2, Cygwin, etc, pero nada me funciono. Tal vez en un futuro lo intente nuevamente, pero por ahora, no esta en mis planes, yo con mi Linux Mint estoy mas que contento.
+Aclaro que no soy ningún experto en el tema, y que seguramente, todo lo que hice se pueda mejorar. Todas las guías están orientadas a un entorno GNU/Linux, no hay nada de Windows por aquí. Tomé esta decición debido a la complejidad excesiva y a la falta de documentación para generar cadenas de herramientas GNU en Windows. Probe hacer esto con MinGW, MSYS2, Cygwin, etc, pero nada me funciono. Tal vez en un futuro lo intente nuevamente, pero por ahora, no esta en mis planes, yo con mi Linux estoy mas que contento.
 
 ## GCC
 
