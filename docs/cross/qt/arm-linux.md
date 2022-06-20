@@ -1,6 +1,6 @@
 # Constuir toolchain cruzado para ARM Qt con sistema Linux
 
-**Aclaración:** ***este documento se revisó por ultima vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 16 de junio del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Constuir toolchain cruzado para ARM Qt con sistema Linux](#constuir-toolchain-cruzado-para-arm-qt-con-sistema-linux)
@@ -10,12 +10,11 @@
   - [Antes de comenzar](#antes-de-comenzar)
   - [Preparando la Raspberry Pi](#preparando-la-raspberry-pi)
     - [Instalación de Raspberry Pi OS ***(Host)***](#instalación-de-raspberry-pi-os-host)
+    - [Configurar ip estática para el puerto ethernet ***(RPi)***](#configurar-ip-estática-para-el-puerto-ethernet-rpi)
     - [Generación de claves SSH para la Raspberry Pi ***(Host)***](#generación-de-claves-ssh-para-la-raspberry-pi-host)
     - [Configurar la Raspberry Pi ***(RPi)***](#configurar-la-raspberry-pi-rpi)
     - [Habilitar rsync con permisos sudo ***(RPi)***](#habilitar-rsync-con-permisos-sudo-rpi)
     - [Instalar los paquetes de desarrollo ***(RPi)***](#instalar-los-paquetes-de-desarrollo-rpi)
-    - [Configurar IP estática para el puerto ethernet ***(RPi)***](#configurar-ip-estática-para-el-puerto-ethernet-rpi)
-    - [Actualizamos la IP ***(Host)***](#actualizamos-la-ip-host)
     - [Crear copia de seguridad ***(Host)***](#crear-copia-de-seguridad-host)
   - [Preparando el sistema anfitrión](#preparando-el-sistema-anfitrión)
     - [Software necesario ***(Host)***](#software-necesario-host)
@@ -85,18 +84,20 @@ export TODAY=$(date +'%Y-%m-%d')
 export RPI_VERSION="1"
 export RPI_NAME="rpi$RPI_VERSION"
 
-export RPI_USER="pi"
+export RPI_USER="gabi"
 
-export RPI_IMG_NAME="2022-01-28-raspios-bullseye-armhf-lite"
-export RPI_IMG_SHA256="f6e2a3e907789ac25b61f7acfcbf5708a6d224cf28ae12535a2dc1d76a62efbc"
+export RPI_IMG_NAME="2022-04-04-raspios-bullseye-armhf-lite"
+export RPI_IMG_SHA256="34987327503fac1076e53f3584f95ca5f41a6a790943f1979262d58d62b04175"
 ~~~
 
-Una vez tengamos el archivo .zip, nos vamos hacia la carpeta que lo contiene, lo verificamos y descomprimimos:
+Una vez tengamos el archivo .xz, nos vamos hacia la carpeta que lo contiene, lo verificamos y descomprimimos:
 
 ~~~bash
-echo $RPI_IMG_SHA256 $RPI_IMG_NAME.zip && sha256sum $RPI_IMG_NAME.zip
+cd Descargas
 
-unzip $RPI_IMG_NAME.zip
+echo $RPI_IMG_SHA256 $RPI_IMG_NAME.img.xz && sha256sum $RPI_IMG_NAME.img.xz
+
+unxz $RPI_IMG_NAME.img.xz
 ~~~
 
 Insertamos la targeta SD en donde se instalará el sistema. Formateamos la SD y grabamos la imagen. Podemos utilizar cualquier utilidad de discos, en mi caso utilice la utilidad *dd*:
@@ -121,32 +122,47 @@ sudo rm -rf /media/$USER/raspi-boot
 
 Ya puede desconectar su targeta SD y encender su Raspberry Pi.
 
-### Generación de claves SSH para la Raspberry Pi ***(Host)***
+Cuando la Raspberry se inicie por primera vez, le pedirá una configuración base como el usuario y la contraseña.
 
-Escanee la IP que tomo la Raspberry Pi:
+### Configurar ip estática para el puerto ethernet ***(RPi)***
+
+Ya que es mas fácil y rápido conectar la Raspberry Pi a nuestra computadora mediante cable Ethernet, definiremos una ip estática para que sea mas sencillo ubicarla.
+
+Editamos el archivo **/etc/dhcpcd.conf**:
 
 ~~~bash
-nmap 192.168.1.2-254 -p 22
+sudo nano /etc/dhcpcd.conf
 ~~~
 
-Ahora añada la siguiente variables bash:
+Y en la parte final añadimos las siguientes lineas:
+
+~~~text
+interface eth0
+static ip_address=192.168.1.100/24
+~~~
+
+Reiniciamos la Raspberry Pi y listo.
+
+### Generación de claves SSH para la Raspberry Pi ***(Host)***
+
+Ahora añada la siguiente variables bash con el valor de la ip estática:
 
 ~~~bash
-export RPI_IP="192.168.1.75"
+export RPI_IP="192.168.10.100"
 ~~~
 
 Puede generar un conjunto de llaves SSH y transferirla a la Raspberry Pi con los siguientes comandos:
 
 ~~~bash
-ssh-keygen -t rsa -b 4096 -C $USER -f $HOME/.ssh/id_rsa_rpi$RPI_VERSION
+ssh-keygen -t rsa -b 4096 -C $USER -f $HOME/SSH/Llaves/gabi-rpi$RPI_VERSION/id_rsa_rpi$RPI_VERSION
 
-ssh-copy-id -i $HOME/.ssh/id_rsa_rpi$RPI_VERSION $RPI_USER@$RPI_IP
+ssh-copy-id -i $HOME/SSH/Llaves/gabi-rpi$RPI_VERSION/id_rsa_rpi$RPI_VERSION $RPI_USER@$RPI_IP
 ~~~
 
-Ingrese el usuario ***pi*** y la contraseña ***raspberry***. Luego ya puede conectarse a la Raspberry Pi con la llave generada:
+Ingrese el usuario y la contraseña. Luego ya puede conectarse a la Raspberry Pi con la llave generada:
 
 ~~~bash
-ssh $RPI_USER@$RPI_IP
+ssh -i $HOME/SSH/Llaves/gabi-rpi$RPI_VERSION/id_rsa_rpi$RPI_VERSION $RPI_USER@$RPI_IP
 ~~~
 
 Esto le ahorrara tiempo para poder conectarse y para poder utilizar los comandos de ***rsync***. Ademas de que Qt pueda emparejarse correctamente.
@@ -275,32 +291,7 @@ sudo apt install libopenal-data libsndio7.0 libopenal1 libopenal-dev pulseaudio
 sudo apt install bluez-tools libbluetooth-dev
 ~~~
 
-### Configurar IP estática para el puerto ethernet ***(RPi)***
-
-Ya que es mas fácil y rápido conectar la Raspberry Pi a nuestra computadora mediante cable Ethernet, definiremos una IP estática para que sea mas sencillo ubicarla.
-
-Editamos el archivo **/etc/dhcpcd.conf**:
-
-~~~bash
-sudo nano /etc/dhcpcd.conf
-~~~
-
-Y en la parte final añadimos las siguientes lineas:
-
-~~~text
-interface eth0
-static ip_address=192.168.1.100/24
-~~~
-
-Reiniciamos la Raspberry Pi y listo, terminamos de realizar la configuración. Podemos probar actualizar una ultima vez y la apagamos.
-
-### Actualizamos la IP ***(Host)***
-
-Actualizamos la variable de bash por la que configuramos en la Raspberry Pi:
-
-~~~bash
-export RPI_IP="192.168.1.100"
-~~~
+Una vez instalados los paquetes que usted necesita, puede apagar la Raspberry y realizar una copia de seguridad.
 
 ### Crear copia de seguridad ***(Host)***
 
@@ -316,12 +307,22 @@ sudo chown $USER:$USER "rpi$RPI_VERSION-($TODAY).img"
 
 ### Software necesario ***(Host)***
 
-Nos aseguramos de tener bien actualizado nuestro sistema, luego, deberemos instalar paquetes necesarios para la compilación de nuestro toolchain:
+Dependiendo de su sistema operativo es como deberá instalar los paquetes necesarios.
+
+En caso de **Arch Linux**:
 
 ~~~bash
 sudo pacman -Syu
 
 sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
+~~~
+
+En caso de **Linux Mint**:
+
+~~~bash
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install build-essential python3 python-is-python3 python3-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync gperf texlive-full autogen guile-3.0 diffutils libgmp10 libgmp-dev libisl22 libisl-dev libmpfr6 libmpfr-dev expat clang llvm cmake ninja-build meson graphviz
 ~~~
 
 ### Creamos mas variables bash ***(Host)***
@@ -333,7 +334,7 @@ export TARGET="arm-linux-gnueabihf"
 
 export QT_VERSION_MAJOR=6
 export QT_VERSION_MINOR=2
-export QT_SUBVERSION=3
+export QT_SUBVERSION=4
 export QT_VERSION="$QT_VERSION_MAJOR.$QT_VERSION_MINOR.$QT_SUBVERSION"
 export QT_HOST_PATH="/opt/qt/$QT_VERSION/gcc_64"
 

@@ -1,13 +1,11 @@
-# Construir toolchain nativo
+# Construir Toolchain nativo
 
 **Aclaración:** ***este documento se revisó por última vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
-- [Construir toolchain nativo](#construir-toolchain-nativo)
+- [Construir Toolchain nativo](#construir-toolchain-nativo)
   - [Tabla de contenidos](#tabla-de-contenidos)
-  - [Introducción](#introducción)
-  - [Referencias](#referencias)
-  - [Construcción del toolchain](#construcción-del-toolchain)
+  - [Construcción del Toolchain](#construcción-del-toolchain)
     - [Preparamos el sistema](#preparamos-el-sistema)
     - [Preparando el entorno de compilación](#preparando-el-entorno-de-compilación)
     - [Descargamos las fuentes](#descargamos-las-fuentes)
@@ -19,27 +17,13 @@
     - [Construcción de GDB](#construcción-de-gdb)
     - [Eliminamos los archivos temporales](#eliminamos-los-archivos-temporales)
 
-## Introducción
-
-Este tutorial detalla el proceso que seguí para poder construir un toolchain GNU/Linux para compilación nativa. Me basé en la documentación oficial y en varios artículos para poder armar, mas o menos, una guía base que ayude a los interezados en el tema.
-
-Debe tener en cuenta la versión de GCC que ejecuta su host. Esto es necesario para la comprobación y reducción de errores del compilador nuevo que se construirá. Si desea conocer mas sobre el proceso de compilación de versiones nuevas de GCC a partir de versiones mas antiguas, es posible deba leer [sobre el bootstrapping.](https://en.wikipedia.org/wiki/Bootstrapping_(compilers))
-
-Le recomiendo que **lea a conciencia**. El copiar y pegar comandos como un loco lo llevará a que nada le funcione y se termine por frustrar. Así que tomece el tiempo y la calma necesaria para leer este post, le aseguro que aprendera bastante.
-
-## Referencias
-
-La documentación oficial de GNU no me fue suficiente para poder realizar el proceso de construcción de manera exitosa. Por suerte hay personas que lograron hacerlo y comparten sus experiencias con nosotros (como yo ahora estoy haciendo con ustedes). A continuación pongo a disposición todas las páginas que leí y me ayudaron:
-
-* [Installing GCC.](https://gcc.gnu.org/install/)
-* [Building GCC OsDev.](https://wiki.osdev.org/Building_GCC)
-* [Building GCC 10 on Ubuntu Linux.](https://solarianprogrammer.com/2016/10/07/building-gcc-ubuntu-linux/)
-
-## Construcción del toolchain
+## Construcción del Toolchain
 
 ### Preparamos el sistema
 
-Yo utilizo **Arch Linux** que es un sistema operativo roling release, por lo que todo lo haré con el gestor de paquetes pacman:
+Dependiendo de su sistema operativo es como deberá instalar los paquetes necesarios.
+
+En caso de **Arch Linux**:
 
 ~~~bash
 sudo pacman -Syu
@@ -47,16 +31,20 @@ sudo pacman -Syu
 sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
 ~~~
 
-La mayoría de las dependencias ya vienen instaladas en un sistema Linux, sin embargo, puede que mas adelante en la construcción aparezcan errores debido a paquetes que no se encuentren, usted debe corregir esto para poder realizar la compilación con éxito.
+En caso de **Linux Mint**:
 
-Esto no debería tardar mas que un momento.
+~~~bash
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install build-essential python3 python-is-python3 python3-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync gperf texlive-full autogen guile-3.0 diffutils libgmp10 libgmp-dev libisl22 libisl-dev libmpfr6 libmpfr-dev expat clang llvm cmake ninja-build meson graphviz
+~~~
 
 ### Preparando el entorno de compilación
 
 En las siguientes instrucciones, asumiré que está realizando todos los pasos en una carpeta separada y que mantiene abierta la misma sesión de terminal hasta que todo esté hecho. En mi caso:
 
-* La ruta de descarga de las fuentes se hará en *$HOME/build-toolchain*
-* La ruta de instalación del toolchain se hará en */opt*
+- La ruta de descarga de las fuentes se hará en *$HOME/build-toolchain*.
+- La ruta de instalación del toolchain se hará en */opt*.
 
 Antes de eso, para poder hacer mas sencilla la escritura de comandos, y así evitar errores de tipeo, voy a exportar las rutas como variables de bash:
 

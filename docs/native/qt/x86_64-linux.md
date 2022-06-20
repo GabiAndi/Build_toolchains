@@ -5,11 +5,10 @@
 ## Tabla de contenidos
 - [Constuir Toolchain nativo con Qt](#constuir-toolchain-nativo-con-qt)
   - [Tabla de contenidos](#tabla-de-contenidos)
-  - [Introducción](#introducción)
-  - [Referencias](#referencias)
   - [Preparando el sistema](#preparando-el-sistema)
     - [Configuración de las dependencias](#configuración-de-las-dependencias)
     - [Instalar los paquetes de desarrollo](#instalar-los-paquetes-de-desarrollo)
+  - [Construcción de Qt](#construcción-de-qt)
     - [Variables de entorno y carpetas](#variables-de-entorno-y-carpetas)
     - [Obtener los binarios de Qt ***(Host)***](#obtener-los-binarios-de-qt-host)
     - [Configurando Qt](#configurando-qt)
@@ -17,31 +16,26 @@
     - [Agregar la versión de Qt](#agregar-la-versión-de-qt)
     - [Agregar Kit](#agregar-kit)
 
-## Introducción
-
-Este tutorial busca guiarlo en la configuración de un entorno de Qt para compilación nativa, ya que podemos caer en la necesidad de compilar Qt para Android (que necesita una version nativa de Qt en nuestro sistema), o compilar una versión estática o dinámica de nuestro proyecto.
-
-Si su distro no esta basada en Debian o un derivado de este, seguramente los comandos para instalar dependencias y demas variarán un poco.
-
-## Referencias
-
-Luego de leer bastante los post de configuración de Qt, di con un video en YouTube que explica bastante bien lo que buscamos hacer:
-
-* [Qt 6 - Build from source (Both Dynamic and Static).](https://www.youtube.com/watch?v=2qsR8Dw8uzA)
-* [Building Qt Sources.](https://doc-snapshots.qt.io/qt6-dev/build-sources.html)
-
-Le recomiendo que **lea a conciencia**. El copiar y pegar comandos como un loco lo llevará a que nada le funcione y se termine por frustrar. Así que tomece el tiempo y la calma necesaria para leer este post, le aseguro que aprenderá bastante.
-
 ## Preparando el sistema
 
 ### Configuración de las dependencias
 
-Nos aseguramos de tener bien actualizado nuestro sistema, luego, deberemos instalar paquetes necesarios para la compilación de nuestro toolchain. Yo utilizo **Arch Linux** que es un sistema operativo roling release, por lo que todo lo haré con el gestor de paquetes pacman:
+Dependiendo de su sistema operativo es como deberá instalar los paquetes necesarios.
+
+En caso de **Arch Linux**:
 
 ~~~bash
 sudo pacman -Syu
 
 sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
+~~~
+
+En caso de **Linux Mint**:
+
+~~~bash
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install build-essential python3 python-is-python3 python3-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync gperf texlive-full autogen guile-3.0 diffutils libgmp10 libgmp-dev libisl22 libisl-dev libmpfr6 libmpfr-dev expat clang llvm cmake ninja-build meson graphviz
 ~~~
 
 ### Instalar los paquetes de desarrollo
@@ -101,6 +95,8 @@ sudo apt install libopenal-data libsndio7.0 libopenal1 libopenal-dev pulseaudio
 ~~~bash
 sudo apt install bluez-tools libbluetooth-dev
 ~~~
+
+## Construcción de Qt
 
 ### Variables de entorno y carpetas
 

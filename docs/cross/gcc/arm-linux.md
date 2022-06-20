@@ -1,17 +1,13 @@
 # Construir toolchain cruzado para ARM con sistema Linux
 
-**Aclaración:** ***este documento se revisó por ultima vez el 11 de marzo del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
+**Aclaración:** ***este documento se revisó por ultima vez el 16 de junio del 2022. Por lo que si esta viendo este artículo pasado un buen tiempo desde la publicación, seguro tenga que complementar la información presente aquí.***
 
 ## Tabla de contenidos
 - [Construir toolchain cruzado para ARM con sistema Linux](#construir-toolchain-cruzado-para-arm-con-sistema-linux)
   - [Tabla de contenidos](#tabla-de-contenidos)
-  - [Introducción](#introducción)
-    - [Referencias](#referencias)
-    - [Información relevante](#información-relevante)
-    - [Experiencia personal](#experiencia-personal)
   - [Pasos previos](#pasos-previos)
     - [Verificamos la versión de paquetes de destino](#verificamos-la-versión-de-paquetes-de-destino)
-  - [Construyendo Toolchain inicial](#construyendo-toolchain-inicial)
+  - [Construyendo el Toolchain inicial](#construyendo-el-toolchain-inicial)
     - [Preparamos el Host](#preparamos-el-host)
     - [Preparando la estructura de carpetas](#preparando-la-estructura-de-carpetas)
     - [Obtenemos las fuentes](#obtenemos-las-fuentes)
@@ -27,7 +23,7 @@
     - [Construcción del depurador GDB](#construcción-del-depurador-gdb)
     - [Probamos el Toolchain](#probamos-el-toolchain)
     - [Guardar el Toolchain recien construido](#guardar-el-toolchain-recien-construido)
-  - [Contruir una versión mas reciente de Toolchain](#contruir-una-versión-mas-reciente-de-toolchain)
+  - [Contruir una versión mas reciente del Toolchain](#contruir-una-versión-mas-reciente-del-toolchain)
     - [Preparando la estructura de carpetas](#preparando-la-estructura-de-carpetas-1)
     - [Obtenemos las fuentes](#obtenemos-las-fuentes-1)
     - [Requisitos previos de GCC](#requisitos-previos-de-gcc-1)
@@ -40,125 +36,39 @@
     - [Guardar el Toolchain recien construido](#guardar-el-toolchain-recien-construido-1)
   - [Conclusiones](#conclusiones)
 
-## Introducción
-
-Este tutorial detalla el proceso que seguí para poder construir GCC para compilación cruzada. Basé mi investigación en la documentación oficial de GNU y en varios artículos de terceros, para poder armar una guía base que ayude a los interezados en el tema.
-
-**¿Qué es un compilador cruzado? ¿Para qué necesito crear el mio?**
-
-Un compilador cruzado es un compilador que genera binarios para sistemas distintos del cual se esta ejecutando. En este caso desde ***x86_64 Linux*** generamos archivos ejecutables para ***armv6 Linux***. Esto permite entre otras cosas, no limitarse a la potencia de computo de la Raspberry Pi, y poder generar los ejecutables directamente en nuestra PC de escritorio.
-
-Toda la guía tiene como objetivo Raspberry Pi 1 en adelante, pero se sigue el mismo proceso para una arquitectura diferente, solo se cambian los parámetros de configuración correspondientes.
-
-Debe tener en cuenta la versión de GCC que ejecuta su máquina. La misma debe ser la mas parecida (o en su defecto mas reciente) a la versión de GCC que se busca compilar. Esto es necesario para la comprobación y reducción de errores del compilador nuevo.
-
-Si desea conocer mas sobre el proceso de compilación de versiones nuevas de GCC a partir de versiones mas antiguas, le recomiendo [que lea sobre el bootstrapping.](https://en.wikipedia.org/wiki/Bootstrapping_(compilers))
-
-**Algunas palabras que utilizaremos**
-
-* **Build:** es el sistema donde se está ejecutando el proceso de construcción.
-
-* **Host:** sistema que ejecutará el GCC una vez que esté construido.
-
-* **Target:** sistema en el que se ejecutarán los binarios producidos por el host.
-
-### Referencias
-
-La documentación oficial no me fue suficiente para poder realizar el proceso de construcción de manera exitosa. Por suerte hay personas que lograron hacerlo y comparten sus experiencias con nosotros (como yo ahora estoy haciendo con ustedes). A continuación pongo a disposición todas las páginas que leí y me ayudaron:
-
-* [Sobre el kernel de la Raspberry Pi (variación de Linux).](https://www.raspberrypi.org/documentation/linux/kernel/building.md)
-* [Artículo de compilación de GCC osdev.org.](https://wiki.osdev.org/Building_GCC)
-* [Artículo de compilación cruzada de GCC osdev.org.](https://wiki.osdev.org/GCC_Cross-Compiler)
-* [Documentación oficial de GCC.](https://gcc.gnu.org/install/configure.html)
-* [Building GCC as a cross compiler for Raspberry Pi.](https://solarianprogrammer.com/2018/05/06/building-gcc-cross-compiler-raspberry-pi/)
-* [How to Build a GCC Cross-Compiler.](https://preshing.com/20141119/how-to-build-a-gcc-cross-compiler/)
-* [Very Simple Guide for Building Cross Compilers Tips.](http://www.ifp.illinois.edu/~nakazato/tips/xgcc.html)
-* [Building GDB and GDBserver for cross debugging.](https://sourceware.org/gdb/wiki/BuildingCrossGDBandGDBserver)
-* [Raspberry Pi Toolchains.](https://sourceforge.net/projects/raspberry-pi-cross-compilers/files/)
-* [Raspberry Pi 3 have CPU armv7l instead Armv8.](https://www.raspberrypi.org/forums/viewtopic.php?t=140572)
-
-Le recomiendo que **lea a conciencia**. El copiar y pegar comandos como un loco lo llevará a que nada le funcione y se termine por frustrar. Así que tomece el tiempo y la calma necesaria para leer este post, le aseguro que aprendera bastante.
-
-### Información relevante
-
-**Sobre GCC**
-
-GCC es parte del proyecto GNU, y tiene como objetivo mejorar el compilador usado en todos los sistemas GNU, incluyendo la variante GNU/Linux. El desarrollo de GCC usa un entorno de desarrollo abierto y soporta muchas plataformas con el fin de fomentar el uso de un compilador-optimizador de clase global, que pueda atraer muchos equipos de desarrollo, y asegure que GCC y los sistemas GNU funcionen en diferentes arquitecturas y diferentes entornos, y más aún, para extender y mejorar las características de GCC.
-
-**Sobre GDB**
-
-GDB o GNU Debugger es el depurador estándar para el compilador GNU.
-
-Es un depurador portable que se puede utilizar en varias plataformas Unix y funciona para varios lenguajes de programación como C, C++ y Fortran. GDB fue escrito por Richard Stallman en 1986. GDB es software libre distribuido bajo la licencia GPL.
-
-GDB ofrece la posibilidad de trazar y modificar la ejecución de un programa. El usuario puede controlar y alterar los valores de las variables internas del programa.
-
-GDB no contiene su propia interfaz gráfica de usuario y por defecto se controla mediante una interfaz de línea de comandos. Existen diversos front-ends que han sido diseñados para GDB.
-
-**Sobre Binutils**
-
-Las GNU Binary Utilities, o binutils, es una colección de herramientas de programación para la manipulación de código de objeto en varios formatos de archivos objeto. Estas herramientas se usan típicamente en conjunto con el GCC, make y GDB.
-
-Originalmente el paquete consistió solamente en las utilidades menores, pero después el GNU Assembler (GAS) y el GNU Linker (GLD) fueron incluidos en los lanzamientos, puesto que su funcionalidad estaba relacionada estrechamente.
-
-**Sobre Glibc**
-
-La biblioteca de C de GNU, comúnmente conocida como Glibc es la biblioteca de tiempo de ejecución estándar del lenguaje C de GNU. Se distribuye bajo los términos de la licencia GNU LGPL.
-
-En los sistemas en los que se usa, esta biblioteca de C que proporciona y define las llamadas al sistema y otras funciones básicas, es utilizada por casi todos los programas. Es muy usada en los sistemas GNU y sistemas basados en el núcleo Linux. Es muy portable y soporta gran cantidad de plataformas de hardware.
-
-**Sobre Newlib**
-
-Newlib es una implementación de la biblioteca estándar de C destinada a su uso en sistemas embebidos. Es un conglomerado de varias partes de bibliotecas, todas bajo Licencia Open Source que la hacen fácilmente utilizable en productos empotrados.
-
-### Experiencia personal
-
-Crear un conjunto de herramientas de compilación cruzada es jugar un poco a la loteria. Existen multitud de configuraciones y versiones de paquetes disponibles, así que tendrá que encontrar la que le funcione.
-
-Es importante saber que no todas las versiones de Glibc son compatibles con todas las versiones de GCC. Para asegurar un buen grado de compatibilidad, recomiendo que se generé un GCC de aproximadamente la misma fecha de lanzamiento que Glibc, lo mismo con Binutils.
-
-Hablo mucho de Glibc porque es la librería estandar que yo utilice, pero en teoría puede utilizar la que mas le guste.
-
-Otra cosa importante es que conviene tener siempre el último lanzamiento de GCC. Ya que el código generado siempre será de mejor calidad. Ademas se corrijen errores y un monton de otras cosas. Si, es cierto que dije que el GCC debería ser de la misma fecha de lanzamiento que las demas herramientas, pero en este tutorial te voy a mostrar como podemos usar un Glibc *viejo* (ya construido) con un GCC mas nuevo.
-
 ## Pasos previos
 
 ### Verificamos la versión de paquetes de destino
 
-Al día de hoy, Raspberry Pi OS viene con GCC 10.2.1, GDB 10.1, Binutils 2.35.2 y Glibc 2.31. Es importante que construyamos nuestro compilador cruzado usando la misma versión de Glibc que la Raspberry Pi. Esto nos permitirá integrarnos con el sistema operativo. Sin embargo no necesario que los Binutils, GCC o GDB necesiten ser de la misma versión.
+Al día de hoy, Raspberry Pi OS viene con GCC 10.2.1, GDB 10.1, Binutils 2.35.2 y Glibc 2.31. Es importante que construyamos nuestro compilador cruzado usando la misma versión de Glibc que la Raspberry Pi. Esto nos permitirá integrarnos con el sistema operativo. Sin embargo no necesario que los Binutils, GCC o GDB necesiten ser de la misma versión, pero sigue siendo recomendable que si lo seán.
 	
 Si en un futuro las versiones incorporadas cambian, puede verificarlas con estos comandos (ejecutados desde la Raspberry Pi obviamente):
 
 ~~~bash
 gcc --version
-
 gdb --version
-
 ld -v
-
 ldd --version
 ~~~
 
 Para mi caso en particular la salida obtenida fue la siguiente:
 
-* Versión de GCC: 10.2.1.
-* Versión de GDB: 10.1.
-* Versión de Binutils: 2.35.2.
-* Versión de Glibc: 2.31.
+- Versión de GCC: 10.2.1.
+- Versión de GDB: 10.1.
+- Versión de Binutils: 2.35.2.
+- Versión de Glibc: 2.31.
 
-Como no siempre es posible tener la versión de Glibc compatible con el compilador de GCC que queremos generar, en este tutorial hacemos lo siguiente:
-
-1. Construimos una versión compatible de GCC para crear un Toolchain inicial.
-2. Construimos Glibc con la versión de GCC compatible.
-3. Construimos el GCC mas reciente incorporado dicho Glibc compatible (precompilado anteriormente).
+Como no siempre es posible tener la versión de Glibc compatible con el compilador de GCC que queremos generar, en este tutorial construimos una versión compatible del toolchain, y luego construimos la versión final del toolchain (compilado con la versión compatible).
 
 Si la versión de GCC, Binutils y Glibc son compatibles y se puede crear la cadena de herramientas completa sin problemas, entonces con realizar la sección **Toolchain inicial** usted ya tendrá todo lo que necesita.
 
-## Construyendo Toolchain inicial
+## Construyendo el Toolchain inicial
 
 ### Preparamos el Host
 
-Yo utilizo **Arch Linux** que es un sistema operativo roling release, por lo que todo lo haré con el gestor de paquetes pacman:
+Dependiendo de su sistema operativo es como deberá instalar los paquetes necesarios.
+
+En caso de **Arch Linux**:
 
 ~~~bash
 sudo pacman -Syu
@@ -166,14 +76,22 @@ sudo pacman -Syu
 sudo pacman -S --needed base-devel python doxygen git openssl unzip wget ncurses rsync texlive-most gperf autogen guile diffutils gmp isl expat clang llvm cmake ninja meson graphviz gtk2
 ~~~
 
+En caso de **Linux Mint**:
+
+~~~bash
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install build-essential python3 python-is-python3 python3-dev doxygen git openssl unzip wget libncurses6 libncursesw6 libncurses-dev rsync gperf texlive-full autogen guile-3.0 diffutils libgmp10 libgmp-dev libisl22 libisl-dev libmpfr6 libmpfr-dev expat clang llvm cmake ninja-build meson graphviz
+~~~
+
 ### Preparando la estructura de carpetas
 
 En las siguientes instrucciones, asumiré que estás realizando todos los pasos en una carpeta separada, y que mantenes abierta la misma sesión de terminal hasta que todo esté hecho. En mi caso:
 
-* La ruta de descarga de las fuentes se hará en *$HOME/build-toolchain/src*.
-* La ruta de compilación de los binarios se hará en *$HOME/build-toolchain/build*.
+- La ruta de descarga de las fuentes se hará en *$HOME/build-toolchain/src*.
+- La ruta de compilación de los binarios se hará en *$HOME/build-toolchain/build*.
 
-Ruta de compilación se refiere a donde se guardaran los binarios compilados del Toolchain. En este tutorial se busca crear un compilador GCC portable. Una vez terminemos, empaquetaremos todo en un archivo *cross-pi-X-gcc-X.X.X.tar.xz* que será trasladable a cualquier sistema (siempre y cuando se cumplan las dependencias propias del Toolchain).
+Ruta de compilación se refiere a donde se guardaran los binarios compilados del Toolchain. En este tutorial se busca crear un compilador portable. Una vez terminemos, empaquetaremos todo en un archivo *cross-pi-X-gcc-X.X.X.tar.xz* que será trasladable a cualquier sistema (siempre y cuando se cumplan las dependencias propias del Toolchain).
 
 Antes de eso, para poder hacer mas sencilla la escritura de comandos, y así evitar errores de tipeo, voy a exportar las rutas y configuraciones como variables de bash:
 
@@ -210,9 +128,7 @@ mkdir -p $SRC_DIR $BUILD_DIR $INSTALL_DIR
 
 ### Obtenemos las fuentes
 
-Descarguemos lo necesario para construir el compilador cruzado. Binutils, Glibc, GCC, GDB y la última versión del kernel de Raspberry.
-
-Para la biblioteca estándar, también puede escoger *Newlib* en lugar de *Glibc*. En mi caso utilizare Glibc ya que la Raspberry corre un sistema GNU/Linux. Newlib se adapta mejor a sistemas embebidos o bare metal:
+Descarguemos lo necesario para construir el compilador cruzado. Binutils, Glibc, GCC, GDB y la última versión del kernel de Raspberry:
 
 ~~~bash
 cd $SRC_DIR
@@ -253,8 +169,6 @@ Durante todo el proceso de compilación, asegúrese de que el subdirectorio */bi
 ~~~bash
 export PATH=$INSTALL_DIR/bin:$PATH
 ~~~
-
-Preste especial atención a las cosas que se instalan debajo *$INSTALL_DIR/*. Este directorio se considera la raíz del sistema de un sistema de destino imaginario. Un compilador de Linux autohospedado podría, en teoría, usar todos los encabezados y bibliotecas colocados aquí. Obviamente, ninguno de los programas creados para el sistema host, como el propio compilador cruzado, se instalará en este directorio.
 
 ### Copiar los encabezados del kernel
 
@@ -496,7 +410,7 @@ tar -czf $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION.tar.xz $INSTALL_DIR_PREFIX-gcc-$GC
 mv $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION.tar.xz $SAVE_TOOLCHAIN_DIR
 ~~~
 
-## Contruir una versión mas reciente de Toolchain
+## Contruir una versión mas reciente del Toolchain
 
 Lo que vamos a hacer a continuación es crear un GCC mas moderno con librerías estándar mas antiguas. Por lo que utilizaremos el compilador creado anteriormente (que es compatible con ese Glibc) para construir la Glibc antigua y luego construir nuestro nuevo GCC con la biblioteca estándar.
 
@@ -721,8 +635,6 @@ mv $INSTALL_DIR_PREFIX-gcc-$GCC_VERSION.tar.xz $SAVE_TOOLCHAIN_DIR
 ~~~
 
 Ahora guarde los comprimidos en una carpeta separada. Luego ya puede eliminar todo el contenido de la ruta de compilación temporal.
-
-**Nota:** se mostro el proceso para generar un compilador nuevo a partir de las Glibc anteriores, pero en realidad es conveniente utilizar la misma versión de GCC que la que incorpora la Raspberry. Esto se debe a que algunos programas utilizan las librerias del compilador.
 
 ## Conclusiones
 
